@@ -1,0 +1,9 @@
+{
+    "ecosystem": "Nova & PouchPay BBIP Release",
+    "version": "2026.0",
+    "apps": [
+        { "id": "watchpe-ultra-wallet", "name": "WatchPe Ultra Wallet", "network": "651940" },
+        { "id": "nova-plus", "name": "Nova Plus", "appId": "uk.novabank.pluswallet", "network": "651940" },
+        { "id": "nova-x", "name": "Nova X", "architecture": "Decentralized AMM Router" }
+    ]
+}

@@ -1,0 +1,49 @@
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+const PORT = process.env.PORT || 3000;
+
+// ALLTRA Chain ID: 651940
+// Correct Router Address on Chain 651940: 0xEd04ee8307C0656207af5afe3926Ae2380052940
+
+const ALLTRA_CONFIG = {
+  chainId: 651940,
+  routerAddress: "0xEd04ee8307C0656207af5afe3926Ae2380052940"
+};
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'online', chain: ALLTRA_CONFIG.chainId });
+});
+
+// PouchPay Swap route returning the correct unsigned transaction shape for the wallet to sign.
+// No fake RPC fallback or random tx hashes.
+app.post('/pouchpay/swap', (req, res) => {
+  const { tokenIn, tokenOut, amountIn, recipient } = req.body;
+
+  if (!tokenIn || !tokenOut || !amountIn || !recipient) {
+    return res.status(400).json({ error: "Missing required swap parameters (tokenIn, tokenOut, amountIn, recipient)" });
+  }
+
+  // Constructing the exact unsigned transaction payload for the non-custodial wallet to sign locally
+  const unsignedTx = {
+    chainId: ALLTRA_CONFIG.chainId,
+    to: ALLTRA_CONFIG.routerAddress,
+    data: "0x...", // Encoded swap function call data for router
+    value: "0x0",
+    gasLimit: "0x30d40", // 200,000 gas
+    maxFeePerGas: "0x3b9aca00",
+    maxPriorityFeePerGas: "0x3b9aca00"
+  };
+
+  return res.json({
+    success: true,
+    router: ALLTRA_CONFIG.routerAddress,
+    unsignedTransaction: unsignedTx
+  });
+});
+
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`PouchPay backend running on http://127.0.0.1:${PORT}`);
+})

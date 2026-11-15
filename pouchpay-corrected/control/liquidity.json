@@ -1,0 +1,13 @@
+{
+  "appId": "pouchpay",
+  "poolSource": "registered factory on selected chain only",
+  "countSharedContractsOnce": true,
+  "ownedLiquidityAddresses": [],
+  "allowLiquidityWrites": false,
+  "requireExplicitPairAmountsAndMinimums": true,
+  "chainIds": [
+    651940
+  ],
+  "poolAllowlist": null,
+  "maxInputReserveBps": 100
+}

@@ -1,0 +1,6 @@
+{
+    "name": "nova-x-dex",
+    "version": "3.0.0",
+    "description": "Nova X decentralized AMM router protocol.",
+    "dependencies": { "ethers": "^6.10.0" }
+}

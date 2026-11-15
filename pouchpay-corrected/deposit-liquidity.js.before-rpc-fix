@@ -1,0 +1,38 @@
+const { ethers } = require('ethers');
+require('dotenv').config();
+
+async function main() {
+    // 1. Validate environment configuration
+    const privateKey = process.env.PRIVATE_KEY;
+    const rpcUrl = process.env.RPC_URL;
+
+    if (!privateKey) {
+        throw new Error("PRIVATE_KEY is missing in your .env file");
+    }
+    if (!rpcUrl) {
+        throw new Error("RPC_URL is missing in your .env file");
+    }
+
+    // 2. Initialize provider and wallet
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const wallet = new ethers.Wallet(privateKey, provider);
+
+    console.log("----------------------------------------");
+    console.log("Connected Wallet Address:", wallet.address);
+    
+    const network = await provider.getNetwork();
+    console.log("Connected to Chain ID:", network.chainId.toString());
+    console.log("----------------------------------------");
+
+    // 3. Liquidity Deposit Logic Placeholder
+    // Example: Add your token contract interactions, approvals, 
+    // and liquidity pool router deposit calls here.
+    console.log("Ready to execute liquidity deposit transaction...");
+}
+
+main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error("Execution error:", error);
+        process.exit(1);
+    });

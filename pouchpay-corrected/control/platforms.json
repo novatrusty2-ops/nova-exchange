@@ -1,0 +1,82 @@
+{
+  "reviewedOn": "2026-11-13",
+  "bridgeRoutes": [],
+  "platforms": [
+    {
+      "id": "metamask",
+      "name": "MetaMask",
+      "kind": "wallet",
+      "status": "custom-network-wallet",
+      "source": "https://support.metamask.io/configure/networks/how-to-add-a-custom-network-rpc",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "trustwallet",
+      "name": "Trust Wallet",
+      "kind": "wallet",
+      "status": "custom-network-wallet",
+      "source": "https://trustwallet.com/es/blog/academy/como-agregar-una-red-personalizada-en-trust-wallet",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "binance",
+      "name": "Binance",
+      "kind": "exchange",
+      "status": "deposit-route-unverified",
+      "source": "https://www.binance.com/en/support/faq/detail/115003764971",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "coinbase",
+      "name": "Coinbase Exchange",
+      "kind": "exchange",
+      "status": "deposit-route-unverified",
+      "source": "https://help.coinbase.com/en/coinbase/trading-and-funding/cryptocurrency-trading-pairs/steps-to-receive-crypto",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "okx",
+      "name": "OKX",
+      "kind": "exchange",
+      "status": "deposit-route-unverified",
+      "source": "https://www.okx.com/en-eu/help/how-to-check-supported-tokens-and-networks",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "bybit",
+      "name": "Bybit",
+      "kind": "exchange",
+      "status": "deposit-route-unverified",
+      "source": "https://www.bybit.com/en/help-center/article/Bybit-Deposit-FAQ",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "uniswap",
+      "name": "Uniswap",
+      "kind": "dex",
+      "status": "alltra-route-unverified",
+      "source": "https://developers.uniswap.org/docs/trading/swapping-api/supported-chains",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "sushiswap",
+      "name": "SushiSwap",
+      "kind": "dex",
+      "status": "alltra-route-unverified",
+      "source": "https://www.sushi.com/blog/sushixswap-now-supports-25-chains",
+      "exchangeDepositRouteVerified": false
+    },
+    {
+      "id": "pancakeswap",
+      "name": "PancakeSwap",
+      "kind": "dex",
+      "status": "alltra-route-unverified",
+      "source": "https://docs.pancakeswap.finance/",
+      "exchangeDepositRouteVerified": false
+    }
+  ],
+  "appId": "pouchpay",
+  "sourceChainIds": [
+    651940
+  ]
+}

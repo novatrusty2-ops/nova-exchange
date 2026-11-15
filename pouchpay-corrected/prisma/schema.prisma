@@ -1,0 +1,12 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Add reviewed application models here before creating the first migration.
+// No account balances, funding, approvals, or on-chain ownership are inferred.

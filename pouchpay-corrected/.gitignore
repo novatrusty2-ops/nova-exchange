@@ -1,0 +1,12 @@
+
+# Local credentials and generated Prisma/build files
+.env*
+!.env.example
+!.env.database.example
+node_modules/
+dist/
+src/generated/prisma/
+*.tsbuildinfo
+
+# Local PostgreSQL credentials and initialization state
+.local/

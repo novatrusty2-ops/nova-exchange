@@ -1,0 +1,12 @@
+{
+  "appId": "pouchpay",
+  "routes": [],
+  "alltraCrossChainBridgeConfigured": false,
+  "pendingConnections": [
+    {
+      "sourceChainId": 651940,
+      "destinationChainId": 22016,
+      "deployedPairKnown": false
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "verifiedOn": "2026-11-13",
+  "networks": [
+    {
+      "id": "ethereum",
+      "name": "Ethereum",
+      "chainId": 1,
+      "rpc": "https://ethereum-rpc.publicnode.com",
+      "secondary": "https://eth.drpc.org",
+      "native": "ETH",
+      "explorer": "https://etherscan.io",
+      "tokens": [
+        {
+          "id": "ETH",
+          "native": true,
+          "decimals": 18
+        },
+        {
+          "id": "USDC",
+          "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "decimals": 6,
+          "source": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+          "runtimeCodeHash": "0xd80d4b7c890cb9d6a4893e6b52bc34b56b25335cb13716e0d1d31383e6b41505"
+        },
+        {
+          "id": "USDT",
+          "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "decimals": 6,
+          "source": "https://tether.to/en/supported-protocols/",
+          "runtimeCodeHash": "0xb44fb4e949d0f78f87f79ee46428f23a2a5713ce6fc6e0beb3dda78c2ac1ea55"
+        }
+      ],
+      "genesis": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
+      "baselineBlock": {
+        "number": "0x192e86d",
+        "hash": "0x29f646866e174dbf00214211e1380a85e32b966339e73f98a1b7014ef8815a44"
+      },
+      "baselineVerified": true
+    },
+    {
+      "id": "base",
+      "name": "Base",
+      "chainId": 8453,
+      "rpc": "https://mainnet.base.org",
+      "secondary": "https://base.drpc.org",
+      "native": "ETH",
+      "explorer": "https://basescan.org",
+      "tokens": [
+        {
+          "id": "ETH",
+          "native": true,
+          "decimals": 18
+        },
+        {
+          "id": "USDC",
+          "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+          "decimals": 6,
+          "source": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+          "runtimeCodeHash": "0xa6705a10bb756b5dea144591118be77d7af0c3eee3bf2dfe2583dcb0364fefab"
+        }
+      ],
+      "genesis": "0xf712aa9241cc24369b143cf6dce85f0902a9731e70d66818a3a5845b296c73dd",
+      "baselineBlock": {
+        "number": "0x3636f76",
+        "hash": "0xc7ee5f8af344bbf7f7a57c346088a8628ae45ac7f176bb91ecdcc419cefdf4d2"
+      },
+      "baselineVerified": true
+    },
+    {
+      "id": "arbitrum",
+      "name": "Arbitrum One",
+      "chainId": 42161,
+      "rpc": "https://arb1.arbitrum.io/rpc",
+      "secondary": "https://arbitrum-one-rpc.publicnode.com",
+      "native": "ETH",
+      "explorer": "https://arbiscan.io",
+      "tokens": [
+        {
+          "id": "ETH",
+          "native": true,
+          "decimals": 18
+        },
+        {
+          "id": "USDC",
+          "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+          "decimals": 6,
+          "source": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+          "runtimeCodeHash": "0xad30d819dbc47814b7e6cb837fd7cc57fcb591479a38596ee93de4fc52e8c435"
+        }
+      ],
+      "genesis": "0x7ee576b35482195fc49205cec9af72ce14f003b9ae69f6ba0faef4514be8b442",
+      "baselineBlock": {
+        "number": "0x1f38d3aa",
+        "hash": "0x8e997301c0694cf892ff0984bd6411400082e63d82f39940f65dbd03bb8403bb"
+      },
+      "baselineVerified": true
+    },
+    {
+      "id": "bnb",
+      "name": "BNB Smart Chain",
+      "chainId": 56,
+      "rpc": "https://bsc-dataseed.bnbchain.org",
+      "secondary": "https://bsc-dataseed.defibit.io",
+      "native": "BNB",
+      "explorer": "https://bscscan.com",
+      "tokens": [
+        {
+          "id": "BNB",
+          "native": true,
+          "decimals": 18
+        }
+      ],
+      "genesis": "0x0d21840abff46b96c84b2ac9e10e4f5cdaeb5693cb665db62a2f3b02d2d57b5b",
+      "baselineBlock": {
+        "number": "0x7f2599c",
+        "hash": "0xe912e0de6f5b1b16fcccfcc9b0173947fbaea750959f1473c83f8e2b3559cb91"
+      },
+      "baselineVerified": true
+    }
+  ],
+  "appId": "pouchpay"
+}

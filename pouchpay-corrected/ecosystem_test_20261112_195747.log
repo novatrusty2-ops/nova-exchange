@@ -1,0 +1,498 @@
+=== Starting Ecosystem Status Tests: Thu Nov 12 07:57:47 PM +03 2026 ===
+
+----------------------------------------
+Testing Port 3001...
+----------------------------------------
+{
+    "success": true,
+    "timestamp": "2026-11-12T16:57:47.309Z",
+    "data": {
+        "vaultReserves": [
+            {
+                "index": 0,
+                "pool": "nova-pool-usd",
+                "asset": "USDT",
+                "balance": "241,000,000,000 USD",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 1,
+                "pool": "nova-pool-eur",
+                "asset": "EURT",
+                "balance": "50,000,000,000 EUR",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 2,
+                "pool": "nova-pool-gbp",
+                "asset": "GBPT",
+                "balance": "25,000,000,000 GBP",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 3,
+                "pool": "nova-pool-aed",
+                "asset": "AEDT",
+                "balance": "10,000,000,000 AED",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 4,
+                "pool": "nova-one-chain-pool",
+                "chainId": 22016,
+                "asset": "NOVA1",
+                "balance": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 5,
+                "pool": "nrw-world-chain-pool",
+                "chainId": 33001,
+                "asset": "NRW",
+                "balance": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            }
+        ],
+        "liquidityRouters": [
+            {
+                "index": 0,
+                "app": "Nova X",
+                "router": "router-novax-usd",
+                "allocation": "100,000,000,000 USD",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 1,
+                "app": "PouchPay Alltra wallet",
+                "router": "router-pouchpay-eur",
+                "allocation": "25,000,000,000 EUR",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 2,
+                "app": "Nova Plus",
+                "router": "router-novaplus-gbp",
+                "allocation": "10,000,000,000 GBP",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 3,
+                "app": "Nova One",
+                "chainId": 22016,
+                "router": "router-nova-one",
+                "allocation": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 4,
+                "app": "NRW World Chain",
+                "chainId": 33001,
+                "router": "router-nrw-world-chain",
+                "allocation": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            }
+        ]
+    }
+}
+
+----------------------------------------
+Testing Port 3002...
+----------------------------------------
+{
+    "success": true,
+    "timestamp": "2026-11-12T16:57:47.360Z",
+    "data": {
+        "vaultReserves": [
+            {
+                "index": 0,
+                "pool": "nova-pool-usd",
+                "asset": "USDT",
+                "balance": "241,000,000,000 USD",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 1,
+                "pool": "nova-pool-eur",
+                "asset": "EURT",
+                "balance": "50,000,000,000 EUR",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 2,
+                "pool": "nova-pool-gbp",
+                "asset": "GBPT",
+                "balance": "25,000,000,000 GBP",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 3,
+                "pool": "nova-pool-aed",
+                "asset": "AEDT",
+                "balance": "10,000,000,000 AED",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 4,
+                "pool": "nova-one-chain-pool",
+                "chainId": 22016,
+                "asset": "NOVA1",
+                "balance": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 5,
+                "pool": "nrw-world-chain-pool",
+                "chainId": 33001,
+                "asset": "NRW",
+                "balance": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            }
+        ],
+        "liquidityRouters": [
+            {
+                "index": 0,
+                "app": "Nova X",
+                "router": "router-novax-usd",
+                "allocation": "100,000,000,000 USD",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 1,
+                "app": "PouchPay Alltra wallet",
+                "router": "router-pouchpay-eur",
+                "allocation": "25,000,000,000 EUR",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 2,
+                "app": "Nova Plus",
+                "router": "router-novaplus-gbp",
+                "allocation": "10,000,000,000 GBP",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 3,
+                "app": "Nova One",
+                "chainId": 22016,
+                "router": "router-nova-one",
+                "allocation": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 4,
+                "app": "NRW World Chain",
+                "chainId": 33001,
+                "router": "router-nrw-world-chain",
+                "allocation": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            }
+        ]
+    }
+}
+
+----------------------------------------
+Testing Port 3003...
+----------------------------------------
+{
+    "success": true,
+    "timestamp": "2026-11-12T16:57:47.420Z",
+    "data": {
+        "vaultReserves": [
+            {
+                "index": 0,
+                "pool": "nova-pool-usd",
+                "asset": "USDT",
+                "balance": "241,000,000,000 USD",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 1,
+                "pool": "nova-pool-eur",
+                "asset": "EURT",
+                "balance": "50,000,000,000 EUR",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 2,
+                "pool": "nova-pool-gbp",
+                "asset": "GBPT",
+                "balance": "25,000,000,000 GBP",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 3,
+                "pool": "nova-pool-aed",
+                "asset": "AEDT",
+                "balance": "10,000,000,000 AED",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 4,
+                "pool": "nova-one-chain-pool",
+                "chainId": 22016,
+                "asset": "NOVA1",
+                "balance": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 5,
+                "pool": "nrw-world-chain-pool",
+                "chainId": 33001,
+                "asset": "NRW",
+                "balance": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            }
+        ],
+        "liquidityRouters": [
+            {
+                "index": 0,
+                "app": "Nova X",
+                "router": "router-novax-usd",
+                "allocation": "100,000,000,000 USD",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 1,
+                "app": "PouchPay Alltra wallet",
+                "router": "router-pouchpay-eur",
+                "allocation": "25,000,000,000 EUR",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 2,
+                "app": "Nova Plus",
+                "router": "router-novaplus-gbp",
+                "allocation": "10,000,000,000 GBP",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 3,
+                "app": "Nova One",
+                "chainId": 22016,
+                "router": "router-nova-one",
+                "allocation": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 4,
+                "app": "NRW World Chain",
+                "chainId": 33001,
+                "router": "router-nrw-world-chain",
+                "allocation": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            }
+        ]
+    }
+}
+
+----------------------------------------
+Testing Port 22016...
+----------------------------------------
+{
+    "success": true,
+    "timestamp": "2026-11-12T16:57:47.465Z",
+    "data": {
+        "vaultReserves": [
+            {
+                "index": 0,
+                "pool": "nova-pool-usd",
+                "asset": "USDT",
+                "balance": "241,000,000,000 USD",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 1,
+                "pool": "nova-pool-eur",
+                "asset": "EURT",
+                "balance": "50,000,000,000 EUR",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 2,
+                "pool": "nova-pool-gbp",
+                "asset": "GBPT",
+                "balance": "25,000,000,000 GBP",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 3,
+                "pool": "nova-pool-aed",
+                "asset": "AEDT",
+                "balance": "10,000,000,000 AED",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 4,
+                "pool": "nova-one-chain-pool",
+                "chainId": 22016,
+                "asset": "NOVA1",
+                "balance": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 5,
+                "pool": "nrw-world-chain-pool",
+                "chainId": 33001,
+                "asset": "NRW",
+                "balance": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            }
+        ],
+        "liquidityRouters": [
+            {
+                "index": 0,
+                "app": "Nova X",
+                "router": "router-novax-usd",
+                "allocation": "100,000,000,000 USD",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 1,
+                "app": "PouchPay Alltra wallet",
+                "router": "router-pouchpay-eur",
+                "allocation": "25,000,000,000 EUR",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 2,
+                "app": "Nova Plus",
+                "router": "router-novaplus-gbp",
+                "allocation": "10,000,000,000 GBP",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 3,
+                "app": "Nova One",
+                "chainId": 22016,
+                "router": "router-nova-one",
+                "allocation": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 4,
+                "app": "NRW World Chain",
+                "chainId": 33001,
+                "router": "router-nrw-world-chain",
+                "allocation": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            }
+        ]
+    }
+}
+
+----------------------------------------
+Testing Port 33001...
+----------------------------------------
+{
+    "success": true,
+    "timestamp": "2026-11-12T16:57:47.526Z",
+    "data": {
+        "vaultReserves": [
+            {
+                "index": 0,
+                "pool": "nova-pool-usd",
+                "asset": "USDT",
+                "balance": "241,000,000,000 USD",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 1,
+                "pool": "nova-pool-eur",
+                "asset": "EURT",
+                "balance": "50,000,000,000 EUR",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 2,
+                "pool": "nova-pool-gbp",
+                "asset": "GBPT",
+                "balance": "25,000,000,000 GBP",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 3,
+                "pool": "nova-pool-aed",
+                "asset": "AEDT",
+                "balance": "10,000,000,000 AED",
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 4,
+                "pool": "nova-one-chain-pool",
+                "chainId": 22016,
+                "asset": "NOVA1",
+                "balance": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            },
+            {
+                "index": 5,
+                "pool": "nrw-world-chain-pool",
+                "chainId": 33001,
+                "asset": "NRW",
+                "balance": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "SECURE & VERIFIED"
+            }
+        ],
+        "liquidityRouters": [
+            {
+                "index": 0,
+                "app": "Nova X",
+                "router": "router-novax-usd",
+                "allocation": "100,000,000,000 USD",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 1,
+                "app": "PouchPay Alltra wallet",
+                "router": "router-pouchpay-eur",
+                "allocation": "25,000,000,000 EUR",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 2,
+                "app": "Nova Plus",
+                "router": "router-novaplus-gbp",
+                "allocation": "10,000,000,000 GBP",
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 3,
+                "app": "Nova One",
+                "chainId": 22016,
+                "router": "router-nova-one",
+                "allocation": "50,000,000,000 NOVA1",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            },
+            {
+                "index": 4,
+                "app": "NRW World Chain",
+                "chainId": 33001,
+                "router": "router-nrw-world-chain",
+                "allocation": "75,000,000,000 NRW",
+                "subKycEnabled": true,
+                "status": "FULLY ROUTED"
+            }
+        ]
+    }
+}
+
+=== Tests Completed. Results saved to ecosystem_test_20261112_195747.log ===

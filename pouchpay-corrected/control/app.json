@@ -1,0 +1,179 @@
+{
+  "id": "pouchpay",
+  "name": "PouchPay / Alltra Wallet",
+  "port": 3001,
+  "accountReference": "6572",
+  "primaryChainId": 651940,
+  "authChainIds": [
+    651940,
+    1,
+    8453,
+    42161,
+    56
+  ],
+  "preferredAuthChainId": 1,
+  "features": {
+    "swaps": true,
+    "transfers": true,
+    "wrap": true,
+    "liquidityRead": true
+  },
+  "chains": {
+    "651940": {
+      "chainId": 651940,
+      "genesis": "0xa0473b8517df23c8444039a1e6e1cd18339ad9e0a77ec1a6484dd1f0cf708855",
+      "rpc": "https://alltra.global/rpc",
+      "router": "0xed04ee8307c0656207af5afe3926ae2380052940",
+      "factory": "0x3c3ed514691c06c89bf6626b05d22991e8924c93",
+      "wrapped": "0x2da2b8f961f161ab6320acb3377e2e844a3c3ce4",
+      "hashes": {
+        "0xed04ee8307c0656207af5afe3926ae2380052940": "0xcd8d94aa9d731c666b6de154887f7ba756436f4d78aaee8c77f72418dc25844f",
+        "0x3c3ed514691c06c89bf6626b05d22991e8924c93": "0x2f1b3a9efca2336c6550fb6a686f6c42720850994545a580886cab13fec60051",
+        "0x2da2b8f961f161ab6320acb3377e2e844a3c3ce4": "0x3b343a90fa18d175c1b3f115d9523721a4a9968dac1661d8db7e4fe8832e4de1",
+        "0x70a38a336f7f857975452a19b81e87321e262aeb": "0x235edfa1ae693cb5c3cea75cb2b2969a167c981ec72493ef3294822032e01a52",
+        "0xfca3ea4102f23caae0aed893a2bfb8818523f09f": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339",
+        "0x66971b907dfcc6325124af427fc7f97656a68e9c": "0x21da715f997717ebb54d722c9455e268d95ccbaacbc1b4ef9e6e9be2cff33d14",
+        "0x4b1cce885c4f08308146c13c10d00743c8bc8908": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339",
+        "0xa95eed79f84e6a0151eaeb9d441f9ffd50e8e881": "0xd3c008d353c090428aede5bff3e4b5f16c05018b79d6bcef966f8ed58363f314",
+        "0xb0201c92126c13f5979b3e2c3b7a97a3bd1cec50": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339",
+        "0x798f6762bb40d6801a593459d08f890603d3979c": "0xca1239d80ed38c8b2e06b62f54a28a757074349bd36082c5f785d1b4b7d7a9a7",
+        "0x283afebcaba39d33b578f10f37595c33c3a08e35": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339",
+        "0xe86714a357e20bb7af375f2bb18601f5caaedac9": "0x5ef6ce9bc6dd22a270f18cedaed61d7341c5709fac7b5cac69746f53337ae575",
+        "0x8bfeef0125393ff3860722c064fd1ab840be7f3e": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339",
+        "0xfe6e0aed4ca571bfbf3c3ae7bf01fca40b4716d3": "0xb117bc3cfbf510f451aaddf0fe3cb5bd08ab9bdeac567d86344c90696fb03e2a",
+        "0xff1ac48e6cb456269d3cdc440aecd55756fbe35e": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339",
+        "0x90a72d1cc06434938671e3e10c8774870bd40e41": "0xb117bc3cfbf510f451aaddf0fe3cb5bd08ab9bdeac567d86344c90696fb03e2a",
+        "0xaa9de6e291527cde09492bf9bd180d489c58ddee": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339",
+        "0xaa7d8c0b6119148de1456ec0025f9a7b2dd41a4f": "0xb117bc3cfbf510f451aaddf0fe3cb5bd08ab9bdeac567d86344c90696fb03e2a",
+        "0x1d546d57cd24bdaa34af34056029be6a35653410": "0x35ce8c262431617b96b41ff55e6f5c8a4daf915189eb9865249495944a9a2339"
+      },
+      "tokens": [
+        {
+          "id": "ALL",
+          "address": "0x0000000000000000000000000000000000000000",
+          "decimals": 18,
+          "native": true,
+          "label": "ALL (Alltra native)"
+        },
+        {
+          "id": "$BUCKS",
+          "address": "0x90a72d1cc06434938671e3e10c8774870bd40e41",
+          "decimals": 18,
+          "native": false,
+          "label": "$BUCKS (Alltra catalog)"
+        },
+        {
+          "id": "ACX",
+          "address": "0xe86714a357e20bb7af375f2bb18601f5caaedac9",
+          "decimals": 18,
+          "native": false,
+          "label": "ACX (Alltra catalog)"
+        },
+        {
+          "id": "USDC",
+          "address": "0xa95eed79f84e6a0151eaeb9d441f9ffd50e8e881",
+          "decimals": 18,
+          "native": false,
+          "label": "Alltra catalog USDC"
+        },
+        {
+          "id": "USDT-NATIVE",
+          "address": "0x70a38a336f7f857975452a19b81e87321e262aeb",
+          "decimals": 18,
+          "native": false,
+          "label": "Alltra catalog USDT"
+        },
+        {
+          "id": "WBTC",
+          "address": "0x66971b907dfcc6325124af427fc7f97656a68e9c",
+          "decimals": 8,
+          "native": false,
+          "label": "WBTC (Alltra token)"
+        },
+        {
+          "id": "WETH",
+          "address": "0x798f6762bb40d6801a593459d08f890603d3979c",
+          "decimals": 18,
+          "native": false,
+          "label": "WETH (Alltra token)"
+        },
+        {
+          "id": "WBNB",
+          "address": "0xfe6e0aed4ca571bfbf3c3ae7bf01fca40b4716d3",
+          "decimals": 18,
+          "native": false,
+          "label": "WBNB (Alltra token)"
+        },
+        {
+          "id": "WTRX",
+          "address": "0xaa7d8c0b6119148de1456ec0025f9a7b2dd41a4f",
+          "decimals": 18,
+          "native": false,
+          "label": "WTRX (Alltra token)"
+        },
+        {
+          "id": "WALL",
+          "address": "0x2da2b8f961f161ab6320acb3377e2e844a3c3ce4",
+          "decimals": 18,
+          "native": false,
+          "label": "Wrapped ALL (native-backed)"
+        }
+      ],
+      "accountReference": "6572",
+      "chainName": "Alltra",
+      "nativeCurrency": {
+        "name": "Alltra",
+        "symbol": "ALL",
+        "decimals": 18
+      },
+      "genesisVerified": true,
+      "configurationVerified": true,
+      "nativeTokenId": "ALL",
+      "wrappedTokenId": "WALL"
+    }
+  },
+  "peers": [
+    {
+      "id": "pouchpay",
+      "name": "PouchPay / Alltra Wallet",
+      "baseUrl": "https://nova-x.io/pouchpay/",
+      "chainIds": [
+        651940
+      ]
+    },
+    {
+      "id": "nova-plus",
+      "name": "Nova Plus",
+      "baseUrl": "https://nova-x.io/novaplus/",
+      "chainIds": [
+        651940,
+        22016,
+        33001,
+        1,
+        8453,
+        42161,
+        56
+      ]
+    },
+    {
+      "id": "nova-x",
+      "name": "Nova X",
+      "baseUrl": "https://nova-x.io/novax/",
+      "chainIds": [
+        651940,
+        22016,
+        33001,
+        1,
+        8453,
+        42161,
+        56
+      ]
+    }
+  ],
+  "paths": {
+    "state": "state",
+    "logs": "logs"
+  },
+  "liquidityOwnership": "No owned LP/reserve allocation is assumed from pool visibility.",
+  "publicOrigin": "https://nova-x.io"
+}

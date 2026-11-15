@@ -1,0 +1,7 @@
+{
+    "name": "watchpe-ultra-wallet",
+    "version": "3.0.0",
+    "description": "WatchPe Ultra Wallet full source with wearable signer and network 651940 support.",
+    "main": "src/signer.js",
+    "dependencies": { "ethers": "^6.10.0" }
+}

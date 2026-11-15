@@ -1,0 +1,31 @@
+#!/bin/bash
+
+TARGET_FILE="three-app-audit/pool-summary.json"
+
+# Check if the target file is staged for commit
+if git diff --cached --name-only | grep -q "$TARGET_FILE"; then
+    echo "-> Running schema validation on $TARGET_FILE..."
+    
+    # Run python validation script
+    python3 -c '
+    import json, sys
+    path = "three-app-audit/pool-summary.json"
+    try:
+        with open(path, "r") as f:
+            data = json.load(f)
+        items = data if isinstance(data, list) else data.get("pools", [])
+        for item in items:
+            if "status" not in item or "tvl" not in item:
+                print("Validation Error: Missing required keys (status or tvl).")
+                sys.exit(1)
+        print("JSON schema check passed successfully!")
+    except Exception as e:
+        print(f"Validation Error: {e}")
+        sys.exit(1)
+    '
+    
+    if [ $? -ne 0 ]; then
+        echo "Commit aborted due to schema validation errors."
+        exit 1
+    fi
+fi

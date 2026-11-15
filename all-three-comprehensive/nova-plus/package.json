@@ -1,0 +1,7 @@
+{
+    "name": "nova-plus",
+    "version": "3.0.0",
+    "appId": "uk.novabank.pluswallet",
+    "description": "Nova Plus AAB ecosystem app with persistent session auth.",
+    "dependencies": { "react": "^18.2.0" }
+}

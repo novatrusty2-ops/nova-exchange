@@ -1,0 +1,21 @@
+{
+  "networks": {
+    "Alltra": {
+      "chainId": 651940,
+      "verification": "current RPC/bytecode/core linkage verified",
+      "rpc": "https://alltra.global/rpc",
+      "router": "0xed04ee8307c0656207af5afe3926ae2380052940",
+      "factory": "0x3c3ed514691c06c89bf6626b05d22991e8924c93",
+      "wrappedNative": "0x2da2b8f961f161ab6320acb3377e2e844a3c3ce4"
+    }
+  },
+  "account6572ReserveLock": {
+    "savedDeploymentAddressFound": false,
+    "localContractImplementation": "outputs/account-6572-lock/AccountReserveLock.sol",
+    "deploymentOrFundingPerformed": false
+  },
+  "labWarning": "Recovered QBFT deployment uses chain 922016, not 22016. Do not substitute its addresses for production network addresses.",
+  "accountReference": "6572",
+  "referenceAssociation": "user-specified reference, not independent bank ledger verification",
+  "appId": "pouchpay"
+}

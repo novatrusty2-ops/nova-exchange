@@ -1,0 +1,31 @@
+name: pouchpay-local
+services:
+  postgres:
+    image: postgres:17@sha256:846a7ddaa67a4b354ae1d21087b683901aa6113a4ed626d3787cfbf6c85e3e07
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:55432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/admin_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets:
+      - admin_password
+      - app_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-local-postgres.sh:/docker-entrypoint-initdb.d/10-create-local-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    stop_grace_period: 30s
+secrets:
+  admin_password:
+    file: ./.local/postgres/admin-password
+  app_password:
+    file: ./.local/postgres/app-password
+volumes:
+  postgres_data:

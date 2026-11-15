@@ -1,0 +1,81 @@
+const PRIVATE_KEY = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"; // Your real key hereconst { ethers } = require("ethers");
+
+async function main() {
+  // 1. Provider and Wallet Setup
+  const provider = new ethers.JsonRpcProvider("https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_KEY");
+  
+  // Replace with your actual 64-character hex private key
+  const PRIVATE_KEY = "YOUR_ACTUAL_64_CHARACTER_PRIVATE_KEY_HERE";
+  const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+
+  console.log(`========================================`);
+  console.log(`Connected Wallet: ${wallet.address}`);
+  console.log(`========================================`);
+
+  // 2. Contract Addresses (Ethereum Mainnet)
+  const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+  const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+  const ROUTER_ADDRESS = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; // Uniswap V2 Router
+
+  const ERC20_ABI = [
+    "function approve(address spender, uint256 amount) external returns (bool)",
+    "function balanceOf(address account) external view returns (uint256)"
+  ];
+
+  const ROUTER_ABI = [
+    "function addLiquidity(address tokenA, address tokenB, uint amountADesired, uint amountBDesired, uint amountAMin, uint amountBMin, address to, uint deadline) external returns (uint amountA, uint amountB, uint liquidity)"
+  ];
+
+  const usdt = new ethers.Contract(USDT_ADDRESS, ERC20_ABI, wallet);
+  const router = new ethers.Contract(ROUTER_ADDRESS, ROUTER_ABI, wallet);
+
+  // 3. Pre-flight Balance Checks
+  console.log("Checking wallet balances...");
+  const ethBalance = await provider.getBalance(wallet.address);
+  const usdtBalance = await usdt.balanceOf(wallet.address);
+
+  console.log(`- ETH Balance: ${ethers.formatEther(ethBalance)} ETH`);
+  console.log(`- USDT Balance: ${ethers.formatUnits(usdtBalance, 6)} USDT`);
+
+  const requiredUsdt = ethers.parseUnits("1000.0", 6);
+  if (usdtBalance < requiredUsdt) {
+    throw new Error("Insufficient USDT balance! You need at least 1,000 USDT.");
+  }
+  console.log("✅ Balance check passed!");
+
+  // 4. Define Deposit Amounts (1,000 USDT paired with 0.35 WETH)
+  const usdtAmount = requiredUsdt;
+  const wethAmount = ethers.parseUnits("0.35", 18);
+
+  // 5. Approve USDT for Router
+  console.log("Approving USDT for Uniswap Router...");
+  const approveTx = await usdt.approve(ROUTER_ADDRESS, usdtAmount);
+  console.log(`Approval transaction sent: ${approveTx.hash}`);
+  await approveTx.wait();
+  console.log("✅ USDT successfully approved!");
+
+  // 6. Execute Add Liquidity
+  const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes expiration
+  console.log("Submitting addLiquidity transaction...");
+  
+  const tx = await router.addLiquidity(
+    USDT_ADDRESS,
+    WETH_ADDRESS,
+    usdtAmount,
+    wethAmount,
+    (usdtAmount * 95n) / 100n, // 5% slippage tolerance
+    (wethAmount * 95n) / 100n,
+    wallet.address,
+    deadline,
+    { gasLimit: 350000 }
+  );
+
+  console.log(`🚀 Transaction broadcasted! Hash: ${tx.hash}`);
+  const receipt = await tx.wait();
+  console.log(`🎉 Liquidity added successfully in block ${receipt.blockNumber}!`);
+}
+
+main().catch((error) => {
+  console.error("❌ Error executing liquidity deposit:", error);
+  process.exit(1);
+});

@@ -1,0 +1,14 @@
+{
+  "name": "pouchpay-self-custody-engine",
+  "version": "3.0.0",
+  "description": "True Self-Custody Transaction Builder for PouchPay",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "ethers": "^6.11.0"
+  }
+}

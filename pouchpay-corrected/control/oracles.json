@@ -1,0 +1,30 @@
+{
+  "appId": "pouchpay",
+  "feeds": [
+    {
+      "id": "ethereum-native-eth-usd",
+      "chainId": 1,
+      "assetChainId": 1,
+      "assetKey": "native",
+      "rpc": "https://ethereum-rpc.publicnode.com",
+      "genesis": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
+      "address": "0x5f4ec3df9cbd43714fe2740f5e3616155c5b8419",
+      "aggregator": "0x7d4e742018fb52e48b08be73d041c18b21de6fb5",
+      "proxyCodeHash": "0x4b79b5c8aee6da0f7b393e8b53e6265ef7320a1d16184c65bd3841b5aa3d700d",
+      "aggregatorCodeHash": "0x16f41184f797cb8f8918680df0ebf2a97cc3192aa6b104615f61096fc674f2aa",
+      "decimals": 8,
+      "description": "ETH / USD",
+      "quote": "USD",
+      "maxAgeSeconds": 3600,
+      "source": "https://data.chain.link/feeds/ethereum/mainnet/eth-usd",
+      "directory": "https://reference-data-directory.vercel.app/feeds-mainnet.json",
+      "usage": "Ethereum native ETH only; not NOVA, NRW, ALL, or similarly named wrapped assets"
+    }
+  ],
+  "valuationRules": {
+    "unknownPrices": null,
+    "symbolOnlyMatching": false,
+    "assumeStablecoinPeg": false
+  },
+  "pollSeconds": 60
+}
