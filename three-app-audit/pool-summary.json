@@ -1,0 +1,14 @@
+[
+  {
+    "id": "pool-1",
+    "name": "USDT-USDC LP",
+    "status": "active",
+    "tvl": 0.0
+  },
+  {
+    "id": "pool-2",
+    "name": "ETH-USDT LP",
+    "status": "active",
+    "tvl": 150000.0
+  }
+]
