@@ -1,14 +1,14 @@
 [
   {
-    "id": "pool-1",
+    "id": "nova-pool-usd",
     "name": "USDT-USDC LP",
     "status": "active",
-    "tvl": 0.0
+    "tvl": 241000000000.0
   },
   {
-    "id": "pool-2",
-    "name": "ETH-USDT LP",
+    "id": "nova-pool-eur",
+    "name": "EURT-USDT LP",
     "status": "active",
-    "tvl": 150000.0
+    "tvl": 50000000000.0
   }
 ]
