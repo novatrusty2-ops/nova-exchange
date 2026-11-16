@@ -1,0 +1,30 @@
+name: Contracts tests
+
+# GitHub only runs workflows from the repository-root .github/workflows folder.
+on:
+  push:
+    branches: [master, main]
+    paths: ['pouchpay-corrected/nova-contracts-engine/**', '.github/workflows/contracts-test.yml']
+  pull_request:
+    paths: ['pouchpay-corrected/nova-contracts-engine/**', '.github/workflows/contracts-test.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pouchpay-corrected/nova-contracts-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: pouchpay-corrected/nova-contracts-engine/package-lock.json
+      - run: npm ci
+      - run: npx hardhat compile
+      - run: npx hardhat test
