@@ -1,31 +1,24 @@
-import { Controller, Get, InternalServerErrorException } from '@nestjs/common';
-import * as path from 'path';
-import { VaultSwapService } from './vault-swap.service';
+import { Controller, Get, Post, Body, HttpCode } from '@nestjs/common';
+import { NovaBankService } from './nova-bank.service';
 
-// GET /api/v1/reserves/status
-// Returns the declared Account 6572 reserves from config.js (labeled "declared, not verified")
-// next to the live on-chain Alltra pool reserves. The declared figures are not used for pricing,
-// routing or swaps; only the on-chain pools are.
-@Controller('api/v1/reserves')
+@Controller()
 export class ReservesStatusController {
-  constructor(private readonly vault: VaultSwapService) {}
+  constructor(private readonly novaBankService: NovaBankService) {}
 
-  @Get('status')
-  public async status() {
-    let declared: any;
-    try {
-      const file = process.env.RESERVES_CONFIG || path.join(__dirname, '..', 'config.js');
-      delete require.cache[require.resolve(file)];
-      declared = require(file).reserves;
-    } catch (e) {
-      throw new InternalServerErrorException({ success: false, error: `config.js: ${e.message}` });
-    }
-    let onChain: any;
-    try {
-      onChain = await this.vault.getVaultReserves();
-    } catch {
-      onChain = { status: 'UNAVAILABLE' };
-    }
-    return { success: true, account: '6572', declaredReserves: declared, onChainLiquidity: onChain };
+  @Get(['reserves/status', 'api/v1/reserves/status'])
+  async getReservesStatus() {
+    return this.novaBankService.getAccountReserves('6572');
+  }
+
+  @Get(['ledger-bridge/status', 'api/v1/ledger-bridge/status'])
+  async getLedgerBridgeStatus() {
+    return this.novaBankService.getLedgerBridgeStatus();
+  }
+
+  // Always HTTP 200; read `settled` in the body to know whether anything was actually settled.
+  @Post(['ledger-bridge/settle', 'api/v1/ledger-bridge/settle'])
+  @HttpCode(200)
+  async settleLedgerBridge(@Body() settlementData: any) {
+    return this.novaBankService.settleLedgerBridge(settlementData);
   }
 }
