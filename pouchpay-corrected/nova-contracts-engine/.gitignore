@@ -1,0 +1,6 @@
+# Hardhat build output
+artifacts/
+cache/
+typechain-types/
+coverage/
+coverage.json
