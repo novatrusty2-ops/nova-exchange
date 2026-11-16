@@ -38,9 +38,8 @@ export class RpcController {
     if (!READ_ONLY.has(method)) {
       return { jsonrpc: '2.0', id, error: { code: -32601, message: `Method not allowed on this gateway: ${method}` } };
     }
-    if (method === 'eth_chainId') {
-      return { jsonrpc: '2.0', id, result: '0x' + upstream.chainId.toString(16) };
-    }
+    // Every method, including eth_chainId, is answered by the upstream node. eth_chainId used to be answered
+    // locally from this table, which made a chain with no reachable node look alive.
     try {
       const res = await fetch(upstream.url, {
         method: 'POST',
@@ -49,7 +48,16 @@ export class RpcController {
         signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
+      const json = await res.json();
+      if (method === 'eth_chainId' && typeof json?.result === 'string' && BigInt(json.result) !== BigInt(upstream.chainId)) {
+        this.logger.error(`[${name}] upstream ${upstream.url} reports chain ${BigInt(json.result)}, expected ${upstream.chainId}`);
+        return {
+          jsonrpc: '2.0',
+          id,
+          error: { code: -32603, message: `Upstream RPC is on chain ${BigInt(json.result)}, expected ${upstream.chainId}` },
+        };
+      }
+      return json;
     } catch (e) {
       this.logger.warn(`[${name}] upstream ${upstream.url} unavailable for ${method}: ${e.message}`);
       return { jsonrpc: '2.0', id, error: { code: -32603, message: `Upstream RPC for chain ${upstream.chainId} is unavailable` } };
