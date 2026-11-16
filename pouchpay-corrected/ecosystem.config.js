@@ -1,9 +1,10 @@
+// Backend only. The full PM2 setup for this PC (backend, monitors, local node, Nova X/Plus) is ../ecosystem.config.js.
 module.exports = {
   apps: [
     {
       name: 'pouchpay-backend',
       script: 'dist/main.js',
-      instances: 'max',
+      instances: 2, // was 'max' (24 on this PC)
       exec_mode: 'cluster',
       env: {
         NODE_ENV: 'production',
