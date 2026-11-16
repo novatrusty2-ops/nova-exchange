@@ -1,3 +1,4 @@
+import { ReservesStatusController } from './reserves-status.controller';
 import { Module } from '@nestjs/common';
 import { HealthController } from './health.controller';
 import { RpcController } from './rpc.controller';
@@ -6,7 +7,7 @@ import { VaultSwapService } from './vault-swap.service';
 
 @Module({
   imports: [],
-  controllers: [HealthController, RpcController, VaultSwapController],
+  controllers: [HealthController, RpcController, VaultSwapController, ReservesStatusController],
   providers: [VaultSwapService],
 })
 export class AppModule {}
