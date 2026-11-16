@@ -43,16 +43,56 @@ const PAIR_ABI = [
 ];
 
 const CACHE_MS = 30_000;
+// The Alltra RPC is occasionally slow (seconds) or times out. Each read gets RPC_TIMEOUT_MS and one retry;
+// if both fail, the last successful read is served for up to STALE_MAX_MS, explicitly marked STALE.
+const RPC_TIMEOUT_MS = Number(process.env.ALLTRA_RPC_TIMEOUT_MS) || 8_000;
+const STALE_MAX_MS = Number(process.env.ALLTRA_STALE_MAX_MS) || 10 * 60_000;
+const RETRY_DELAY_MS = 1_000;
+
+function makeProvider() {
+  const request = new ethers.FetchRequest(ALLTRA.rpc);
+  request.timeout = RPC_TIMEOUT_MS;
+  return new ethers.JsonRpcProvider(request, ALLTRA.chainId, { staticNetwork: true });
+}
 
 @Injectable()
 export class VaultSwapService {
   private readonly logger = new Logger(VaultSwapService.name);
-  private readonly provider = new ethers.JsonRpcProvider(ALLTRA.rpc, ALLTRA.chainId, { staticNetwork: true });
+  private readonly provider = makeProvider();
   private cache: { at: number; data: any } | null = null;
 
   public async getVaultReserves() {
     if (this.cache && Date.now() - this.cache.at < CACHE_MS) return this.cache.data;
-    try {
+    let lastError: Error;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const data = await this.readReserves();
+        this.cache = { at: Date.now(), data };
+        return data;
+      } catch (e) {
+        lastError = e;
+        this.logger.warn(`Alltra reserve read attempt ${attempt} failed: ${e.message}`);
+        if (attempt === 1) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      }
+    }
+
+    const ageMs = this.cache ? Date.now() - this.cache.at : Infinity;
+    if (this.cache && ageMs <= STALE_MAX_MS) {
+      const ageS = Math.round(ageMs / 1000);
+      this.logger.warn(`Serving Alltra reserves from ${ageS}s ago (RPC unavailable)`);
+      return {
+        ...this.cache.data,
+        status: 'STALE',
+        staleSeconds: ageS,
+        warnings: [...this.cache.data.warnings, `Alltra RPC unavailable; showing reserves read ${ageS}s ago (block ${this.cache.data.blockNumber}).`],
+      };
+    }
+    this.logger.error(`Alltra reserve read failed: ${lastError.message}`);
+    throw new ServiceUnavailableException({ status: 'UNAVAILABLE', reason: 'Could not read Alltra pools on-chain' });
+  }
+
+  private async readReserves() {
+    {
       const block = await this.provider.getBlock('latest');
       const pools = await Promise.all(POOLS.map((p) => this.readPool(p, block.number)));
 
@@ -86,11 +126,7 @@ export class VaultSwapService {
         status: 'LIVE',
         timestamp: new Date().toISOString(),
       };
-      this.cache = { at: Date.now(), data };
       return data;
-    } catch (e) {
-      this.logger.error(`Alltra reserve read failed: ${e.message}`);
-      throw new ServiceUnavailableException({ status: 'UNAVAILABLE', reason: 'Could not read Alltra pools on-chain' });
     }
   }
 
