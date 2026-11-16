@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
 import { JsonRpcProvider, Contract, formatUnits } from 'ethers';
+import { readFileSync, writeFileSync, renameSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 dotenv.config();
 
@@ -13,7 +15,17 @@ const USDT_DECIMALS = 6;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "YOUR_ACTUAL_BOT_TOKEN";
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "YOUR_ACTUAL_CHAT_ID";
 
-const provider = new JsonRpcProvider(RPC_URL);
+// How the watcher finds deposits: every POLL_MS it asks the node for USDT Transfer logs to WATCH_WALLET
+// in the blocks since the last check (eth_getLogs). It used to keep a filter on the node (contract.on),
+// but public RPCs are load-balanced: the filter lived on one backend, later polls hit others that answered
+// "filter not found", and ethers kept polling the dead filter, so deposits stopped being detected.
+// The last checked block is saved to STATE_FILE, so a restart resumes where it left off.
+const POLL_MS = Number(process.env.WATCHER_POLL_MS) || 15_000;
+const CONFIRMATIONS = Number(process.env.WATCHER_CONFIRMATIONS) || 3; // stay a few blocks behind the tip (reorgs)
+const MAX_RANGE = 500; // blocks per eth_getLogs call; public nodes reject very large ranges
+const STATE_FILE = process.env.WATCHER_STATE_FILE || fileURLToPath(new URL('./.deposit-watcher-state.json', import.meta.url));
+
+const provider = new JsonRpcProvider(RPC_URL, undefined, { staticNetwork: true });
 
 const ERC20_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)"
@@ -48,36 +60,86 @@ async function sendTelegramAlert(message) {
   }
 }
 
+function loadLastBlock() {
+  try {
+    const st = JSON.parse(readFileSync(STATE_FILE, 'utf8'));
+    if (st.wallet?.toLowerCase() === WATCH_WALLET.toLowerCase() && st.token?.toLowerCase() === USDT_CONTRACT.toLowerCase()) {
+      return Number(st.lastBlock);
+    }
+  } catch {}
+  return null;
+}
+
+function saveLastBlock(lastBlock) {
+  const tmp = `${STATE_FILE}.tmp`;
+  writeFileSync(tmp, JSON.stringify({ wallet: WATCH_WALLET, token: USDT_CONTRACT, lastBlock, savedAt: new Date().toISOString() }));
+  renameSync(tmp, STATE_FILE);
+}
+
+async function handleDeposit(log) {
+  const { args } = usdtContract.interface.parseLog(log);
+  const formattedAmount = formatUnits(args.value, USDT_DECIMALS);
+  const txHash = log.transactionHash;
+
+  console.log(`\n📥 INBOUND DEPOSIT DETECTED! (block ${log.blockNumber})`);
+  console.log(`Amount: ${formattedAmount} USDT`);
+  console.log(`From: ${args.from}`);
+  console.log(`TxHash: ${txHash}`);
+
+  const alertMessage = `🚨 *Inbound Deposit Received* 🚨\n\n` +
+    `💰 *Amount:* \`${formattedAmount} USDT\`\n` +
+    `👤 *From:* \`${args.from}\`\n` +
+    `🔗 *TxHash:* \`${txHash}\``;
+
+  await sendTelegramAlert(alertMessage);
+}
+
 async function startWatcher() {
   console.log("=== Nova Deposit Watcher Daemon Started ===");
   console.log(`Monitoring wallet: ${WATCH_WALLET}`);
   console.log(`RPC Gateway: ${RPC_URL}`);
 
-  // Listen only for USDT Transfer events whose `to` is our wallet. The filter is applied by the RPC node,
-  // so we no longer download and discard every USDT transfer on Ethereum.
   const inbound = usdtContract.filters.Transfer(null, WATCH_WALLET);
-  usdtContract.on(inbound, async (from, to, value, event) => {
+  const topics = await inbound.getTopicFilter();
+  const network = await provider.getNetwork();
+  console.log(`Chain ${network.chainId}; polling every ${POLL_MS / 1000}s, ${CONFIRMATIONS} confirmations`);
+
+  let lastBlock = loadLastBlock();
+  if (lastBlock === null) {
+    lastBlock = (await provider.getBlockNumber()) - CONFIRMATIONS;
+    saveLastBlock(lastBlock);
+    console.log(`No saved position; starting from block ${lastBlock} (earlier transfers are not replayed).`);
+  } else {
+    console.log(`Resuming after block ${lastBlock}.`);
+  }
+
+  let failures = 0;
+  for (;;) {
     try {
-      if (to.toLowerCase() === WATCH_WALLET.toLowerCase()) {
-        const formattedAmount = formatUnits(value, USDT_DECIMALS);
-        const txHash = event.log.transactionHash;
-        
-        console.log(`\n📥 INBOUND DEPOSIT DETECTED!`);
-        console.log(`Amount: ${formattedAmount} USDT`);
-        console.log(`From: ${from}`);
-        console.log(`TxHash: ${txHash}`);
-
-        const alertMessage = `🚨 *Inbound Deposit Received* 🚨\n\n` +
-          `💰 *Amount:* \`${formattedAmount} USDT\`\n` +
-          `👤 *From:* \`${from}\`\n` +
-          `🔗 *TxHash:* \`${txHash}\``;
-
-        await sendTelegramAlert(alertMessage);
+      const safeTip = (await provider.getBlockNumber()) - CONFIRMATIONS;
+      while (lastBlock < safeTip) {
+        const from = lastBlock + 1;
+        const to = Math.min(safeTip, lastBlock + MAX_RANGE);
+        const logs = await provider.getLogs({ address: USDT_CONTRACT, topics, fromBlock: from, toBlock: to });
+        for (const log of logs) {
+          try {
+            await handleDeposit(log);
+          } catch (err) {
+            console.error(`Error processing transfer ${log.transactionHash}:`, err.message);
+          }
+        }
+        lastBlock = to;
+        saveLastBlock(lastBlock);
       }
+      if (failures) console.log(`[${new Date().toISOString()}] RPC recovered after ${failures} failed poll(s); checked up to block ${lastBlock}.`);
+      failures = 0;
     } catch (err) {
-      console.error("Error processing transfer event:", err.message);
+      failures++;
+      // One short line per failure; the position is kept, so the same blocks are retried next time.
+      console.error(`[${new Date().toISOString()}] Poll failed (${failures}x, still at block ${lastBlock}): ${err.shortMessage || err.message}`);
     }
-  });
+    await new Promise((r) => setTimeout(r, POLL_MS));
+  }
 }
 
 startWatcher().catch(err => {
