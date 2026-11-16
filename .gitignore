@@ -1,0 +1,8 @@
+.env
+*.env
+logs/
+node_modules/
+*.zip
+*.tar.gz
+*.tar.xz
+android-wrappers/
