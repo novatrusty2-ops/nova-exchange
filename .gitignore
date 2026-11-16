@@ -6,3 +6,6 @@ node_modules/
 *.tar.gz
 *.tar.xz
 android-wrappers/
+
+# Deposit watcher position (last checked block)
+.deposit-watcher-state.json*
