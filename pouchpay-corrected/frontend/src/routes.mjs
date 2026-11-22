@@ -2,9 +2,9 @@
 
 import { gateAction } from './kyc.mjs';
 
-const ACTIONS = ['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge'];
+const ACTIONS = ['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge', 'liquidity'];
 
-export function evaluateRoute({ action, token, kyc, pool, bridge, feeBps, slippageBps }) {
+export function evaluateRoute({ action, token, kyc, pool, bridge, feeBps, slippageBps, liquidityEnabled = false }) {
   if (!ACTIONS.includes(action)) return disabled(action, 'unsupported');
   const gate = gateAction(action, kyc);
   if (!gate.allowed) return disabled(action, gate.reason);
@@ -18,7 +18,10 @@ export function evaluateRoute({ action, token, kyc, pool, bridge, feeBps, slippa
     }
   }
 
-  if (action === 'swap' || action === 'trade') {
+  if (action === 'liquidity' && liquidityEnabled !== true) {
+    return disabled(action, 'unsupported');
+  }
+  if (action === 'swap' || action === 'trade' || action === 'liquidity') {
     if (!pool || pool.status !== 'LIVE') return disabled(action, pool?.status === 'STALE' ? 'stale' : 'unavailable');
     if (!(pool.tokenReserve > 0) || !(pool.allReserve > 0)) return disabled(action, 'unfunded');
     if (typeof feeBps !== 'number') return disabled(action, 'fee_unavailable');

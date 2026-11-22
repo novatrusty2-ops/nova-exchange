@@ -10,7 +10,7 @@ export const PRODUCTS = {
     name: 'PouchPay Alltra',
     chainId: 651940,
     chainName: 'Alltra',
-    rpc: 'https://alltra.global/rpc',
+    rpc: 'https://mainnet-rpc.alltra.global',
     rpcGateway: null,
     nativeSymbol: 'ALL',
     accountReference: '6572',

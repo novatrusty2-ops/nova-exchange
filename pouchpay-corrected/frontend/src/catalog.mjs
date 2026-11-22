@@ -4,6 +4,7 @@
  */
 
 import { getProduct } from './networks.mjs';
+import { isBlockedToken } from './price-identity.mjs';
 
 export const TOKEN_KINDS = ['catalog', 'smart', 'native', 'rapid', 'stable', 'wrapped', 'custom'];
 
@@ -14,7 +15,7 @@ const ALLTRA = [
   { id: 'USDC', symbol: 'USDC', kind: 'stable', decimals: 18, address: '0xa95eed79f84e6a0151eaeb9d441f9ffd50e8e881', pegVerified: false, label: 'Alltra catalog USDC' },
   { id: 'USDT-NATIVE', symbol: 'USDT', kind: 'stable', decimals: 18, address: '0x70a38a336f7f857975452a19b81e87321e262aeb', pegVerified: false, label: 'Alltra catalog USDT' },
   { id: 'WBTC', symbol: 'WBTC', kind: 'wrapped', decimals: 8, address: '0x66971b907dfcc6325124af427fc7f97656a68e9c', pegVerified: false, canonicalSymbol: null },
-  { id: 'WETH', symbol: 'WETH', kind: 'wrapped', decimals: 18, address: '0x798f6762bb40d6801a593459d08f890603d3979c', pegVerified: false, canonicalSymbol: null },
+  { id: 'WETH', symbol: 'WETH', name: 'Wrapped ALL (legacy WETH)', kind: 'wrapped', decimals: 18, address: '0x798f6762bb40d6801a593459d08f890603d3979c', pegVerified: false, canonicalSymbol: null },
   { id: 'WBNB', symbol: 'WBNB', kind: 'wrapped', decimals: 18, address: '0xfe6e0aed4ca571bfbf3c3ae7bf01fca40b4716d3', pegVerified: false, canonicalSymbol: null },
   { id: 'WTRX', symbol: 'WTRX', kind: 'wrapped', decimals: 18, address: '0xaa7d8c0b6119148de1456ec0025f9a7b2dd41a4f', pegVerified: false, canonicalSymbol: null },
   { id: 'WALL', symbol: 'WALL', kind: 'wrapped', decimals: 18, address: '0x2da2b8f961f161ab6320acb3377e2e844a3c3ce4', pegVerified: false, canonicalSymbol: null },
@@ -57,6 +58,7 @@ export function listTokens(productId, customTokens = []) {
   const custom = [];
   for (const token of customTokens) {
     if (!token || !ADDRESS.test(token.address || '')) continue;
+    if (isBlockedToken(getProduct(productId).chainId, token.address)) continue;
     custom.push({
       id: `custom:${token.address.toLowerCase()}`,
       symbol: typeof token.symbol === 'string' && token.symbol.trim() ? token.symbol.trim() : 'CUSTOM',

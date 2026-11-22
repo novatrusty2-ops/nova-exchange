@@ -21,6 +21,7 @@ const READS = {
   pools: '/api/v1/pools/tvl',
   kyc: '/api/v1/kyc/sumsub/status',
   history: '/api/v1/activity',
+  fiatRails: '/api/v1/nova-x/fiat-rails',
 };
 
 export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeoutMs = 8000 } = {}) {
@@ -71,11 +72,14 @@ export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeo
   }
 
   async function recover(path, previous) {
+    if (FINANCIAL_POSTS.some((prefix) => path === prefix || path.startsWith(prefix))) {
+      return { ok: false, state: 'blocked', status: 0, data: null, error: 'financial_execution_disabled', recovered: false, retrySendsFunds: false };
+    }
     if (!previous || (previous.state !== 'timeout' && previous.state !== 'failure')) {
-      return { ...previous, state: previous?.state || 'failure', recovered: false };
+      return { ...previous, state: previous?.state || 'failure', recovered: false, retrySendsFunds: false };
     }
     const next = await request(path);
-    return { ...next, recovered: next.ok === true };
+    return { ...next, recovered: next.ok === true, retrySendsFunds: false };
   }
 
   return {
@@ -90,6 +94,7 @@ export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeo
     pools: () => request(READS.pools),
     kyc: () => request(READS.kyc),
     history: () => request(READS.history),
+    fiatRails: () => request(READS.fiatRails),
     rpc: (productGateway, body) => request(productGateway, { method: 'POST', body, idempotencyKey: `rpc:${body?.id}:${body?.method}` }),
   };
 }

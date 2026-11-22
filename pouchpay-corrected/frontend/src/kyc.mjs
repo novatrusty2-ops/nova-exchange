@@ -3,7 +3,7 @@
  * sensitive actions. This does not create applicants or replace login.
  */
 
-const SENSITIVE = new Set(['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge']);
+const SENSITIVE = new Set(['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge', 'liquidity']);
 
 export function interpretSumsub(body, httpStatus = 200) {
   if (httpStatus === 404 || body == null || body.success === false) {
@@ -22,6 +22,24 @@ export function interpretSumsub(body, httpStatus = 200) {
     reviewStatus,
     reviewAnswer,
   };
+}
+
+export function presentKyc(session, body, httpStatus) {
+  if (!session?.token || typeof session.token !== 'string' || session.token.length === 0) {
+    return {
+      state: 'unavailable',
+      allowsSensitive: false,
+      provider: 'sumsub',
+      display: 'Sign in to view KYC status',
+    };
+  }
+  const parsed = interpretSumsub(body, httpStatus);
+  const display = parsed.state === 'approved'
+    ? 'Verified'
+    : parsed.state === 'blocked'
+      ? 'Not verified'
+      : 'KYC status unavailable';
+  return { ...parsed, display };
 }
 
 export function gateAction(action, kyc) {

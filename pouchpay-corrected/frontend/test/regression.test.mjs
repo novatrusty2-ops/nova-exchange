@@ -1,0 +1,90 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFiatRailCatalog, fiatRailView } from '../src/fiat-rails.mjs';
+import { presentPrice, portfolioTotal, displayName, isBlockedToken, isAlltraWeth } from '../src/price-identity.mjs';
+import { presentKyc } from '../src/kyc.mjs';
+import { swapErrorMessage } from '../src/swap-errors.mjs';
+import { listTokens } from '../src/catalog.mjs';
+import { createClient } from '../src/client.mjs';
+import { loadProductScreen, renderProduct } from '../src/screens.mjs';
+import { PRODUCTS } from '../src/networks.mjs';
+
+const session = { token: 'session-token', address: '0xabc' };
+const buy = { id: 'sample', provider: 'wise', currency: 'USD', roles: ['buy_crypto'], rails: ['wire'], country: 'US' };
+
+test('fiat rail rows keep capability fields and reject a static account fallback', () => {
+  const legacy = { ...buy, accountNumber: 'synthetic', iban: 'DE00', routingNumber: '021', swiftBic: 'TEST', payUrl: 'https://fixture.invalid', note: 'synthetic' };
+  assert.deepEqual(readFiatRailCatalog({ buyCrypto: [legacy], sellCrypto: [] }), { buyCrypto: [buy], sellCrypto: [] });
+  assert.throws(() => readFiatRailCatalog({ accounts: [buy] }), /Invalid fiat rail catalog/);
+  assert.equal(fiatRailView({ ok: false, data: { accounts: [legacy] } }).state, 'unavailable');
+  assert.equal(JSON.stringify(readFiatRailCatalog({ buyCrypto: [legacy], sellCrypto: [] })).includes('accountNumber'), false);
+});
+
+test('signed-out sessions cannot display a verified Sumsub decision', () => {
+  const body = { provider: 'sumsub', reviewStatus: 'completed', reviewAnswer: 'GREEN', verified: true };
+  assert.equal(presentKyc(null, body, 200).state, 'unavailable');
+  assert.equal(presentKyc(null, body, 200).allowsSensitive, false);
+  assert.equal(presentKyc(session, body, 200).display, 'Verified');
+  assert.equal(presentKyc(session, { success: false }, 503).display, 'KYC status unavailable');
+});
+
+test('ALLTRA WETH is not Ethereum ETH and blocked lookalikes stay hidden', () => {
+  const weth = listTokens('pouchpay').find((token) => token.id === 'WETH');
+  assert.equal(isAlltraWeth(weth), true);
+  assert.equal(displayName(weth), 'Wrapped ALL (legacy WETH)');
+  assert.equal(displayName({ ...weth, symbol: 'ETH', name: 'Ether' }), 'Wrapped ALL (legacy WETH)');
+  const blocked = '0x980dad39b3de421d9299e37e430b21b9e02429b6';
+  assert.equal(isBlockedToken(651940, blocked), true);
+  assert.equal(listTokens('pouchpay', [{ address: blocked, symbol: 'WBNB' }]).some((token) => token.address === blocked), false);
+  assert.equal(PRODUCTS.pouchpay.rpc, 'https://mainnet-rpc.alltra.global');
+});
+
+test('unpriced rows never become dollar totals', () => {
+  const row = presentPrice({ priceDisplay: 'Unpriced', priceBasis: 'unpriced', current_price: 0, balance: 4, countsTowardTotals: false });
+  assert.equal(row.text, 'Unpriced');
+  assert.equal(row.text.includes('$'), false);
+  const indicative = presentPrice({ priceDisplay: 'indicative', priceBasis: 'indicative', priceVerified: false, current_price: 65000, balance: 1, priceLabel: 'Indicative price' });
+  assert.equal(indicative.includeInTotal, false);
+  assert.equal(portfolioTotal([row, indicative]).label, 'not available');
+  const verified = presentPrice({ priceDisplay: 'verified', priceBasis: 'priced', priceVerified: true, current_price: 2, balance: 3, countsTowardTotals: true });
+  assert.equal(portfolioTotal([verified]).usd, 6);
+});
+
+test('swap and liquidity errors do not authorize a retry that sends funds', async () => {
+  assert.equal(swapErrorMessage('kyc_decision_unavailable', 503).message, 'Swaps are unavailable while identity checks are offline');
+  assert.equal(swapErrorMessage('regional_swap_limit_unpriced', 403).message, 'Swaps are paused: no verified price');
+  assert.equal(swapErrorMessage('settlement_tx_already_used', 409).message, 'Transaction already used');
+  assert.equal(swapErrorMessage('regional_swap_limit', 200).message, 'This action is unavailable');
+  const client = createClient({ fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({}) }) });
+  const recovered = await client.recover('/api/v1/swap/build-tx', { state: 'failure' });
+  assert.equal(recovered.retrySendsFunds, false);
+  assert.equal(recovered.error, 'financial_execution_disabled');
+});
+
+test('Nova X screen renders rail capabilities without bank instructions', async () => {
+  const client = {
+    health: async () => ({ ok: true, state: 'ready', status: 200, data: {} }),
+    reserves: async () => ({ ok: true, state: 'ready', status: 200, data: { success: true, account: '6572', verified: true, status: 'verified by bank API', balances: {} } }),
+    ledgerBridge: async () => ({ ok: true, state: 'ready', status: 200, data: { success: false, ready: false, settled: false } }),
+    kyc: async () => ({ ok: true, state: 'ready', status: 200, data: { provider: 'sumsub', verified: true, reviewStatus: 'completed', reviewAnswer: 'GREEN' } }),
+    history: async () => ({ ok: true, state: 'ready', status: 200, data: { errorCode: 'regional_swap_limit_unpriced', items: [] } }),
+    fiatRails: async () => ({
+      ok: true,
+      state: 'ready',
+      data: {
+        buyCrypto: [{ ...buy, iban: 'HIDDEN' }],
+        sellCrypto: [],
+      },
+    }),
+  };
+  const screen = await loadProductScreen('nova-x', client, { session });
+  const html = renderProduct(screen);
+  assert.equal(screen.fiat.buyCrypto[0].rails[0], 'wire');
+  assert.equal(html.includes('HIDDEN'), false);
+  assert.equal(html.includes('iban'), false);
+  assert.equal(html.includes('accountNumber'), false);
+  assert.match(html, /Swaps are paused: no verified price/);
+  assert.equal(screen.portfolio.label, 'not available');
+  assert.equal(screen.kyc.display, 'Verified');
+  for (const token of screen.tokens) assert.equal(token.routes.liquidity.enabled, false);
+});
