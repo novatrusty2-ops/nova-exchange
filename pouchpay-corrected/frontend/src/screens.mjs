@@ -10,10 +10,15 @@ import { settlementLabel, visibleHistory } from './settlement.mjs';
 import { mergeAccount } from './accounts.mjs';
 import { checkReservesStatus, checkVaultReserves } from './contract.mjs';
 import { chainReady } from './chain-gate.mjs';
+import { actionCapability } from './capabilities.mjs';
+import { quotePreview } from './quotes.mjs';
+import { pageHistory } from './history-page.mjs';
+import { reservationView } from './reservations.mjs';
+import { bindWallet, redactIdentifier } from './redaction.mjs';
 
 const ACTIONS = ['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge', 'liquidity'];
 
-export async function loadProductScreen(productId, client, { previousAccount = null, customTokens = [], slippageBps = 50, session = null, chainEvidence = null } = {}) {
+export async function loadProductScreen(productId, client, { previousAccount = null, customTokens = [], slippageBps = 50, session = null, chainEvidence = null, quoteEvidence = null, reservationEvidence = null, now = Date.now() } = {}) {
   const product = getProduct(productId);
   const [health, reserves, bridge, vault, kycRes, historyRes] = await Promise.all([
     client.health(),
@@ -68,9 +73,14 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     };
   });
 
-  const historyItems = historyRes.ok
-    ? visibleHistory(historyRes.data?.items || historyRes.data)
-    : [];
+  const rawHistory = historyRes.ok ? (historyRes.data?.items || historyRes.data || []) : [];
+  const historyPage = pageHistory(Array.isArray(rawHistory) ? rawHistory : [], {
+    accountId: session?.accountId ?? null,
+    offset: 0,
+    limit: 20,
+  });
+  const historyItems = visibleHistory(historyPage.items);
+  const wallet = bindWallet(session, { address: session?.address });
 
   return {
     product,
@@ -92,6 +102,11 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     swapError,
     portfolio: portfolioTotal(tokens.map((token) => token.value)),
     chain,
+    quote: quotePreview(quoteEvidence, now),
+    reservation: reservationView(reservationEvidence, now),
+    historyPage,
+    wallet,
+    capabilities: Object.fromEntries(ACTIONS.map((action) => [action, actionCapability({ action })])),
   };
 }
 
@@ -118,6 +133,7 @@ export function renderProduct(screen) {
   const retryable = screen.phase === 'timeout' || screen.phase === 'failure' || screen.phase === 'unavailable';
   return `<section data-product="${screen.product.id}" data-phase="${screen.phase}" aria-busy="false">
     <h1>${escapeHtml(screen.product.name)}</h1>
+    <p>Account ${escapeHtml(redactIdentifier(screen.account?.account))}. Wallet ${escapeHtml(redactIdentifier(screen.wallet?.address))}.</p>
     <p>Chain ${screen.product.chainId}. Vault ${escapeHtml(String(screen.vaultStatus))}.</p>
     <p data-kyc="${screen.kyc.state}">${escapeHtml(screen.kyc.display || screen.kyc.state)}</p>
     <p data-portfolio="${escapeHtml(screen.portfolio.label)}">Portfolio ${escapeHtml(screen.portfolio.label)}</p>
@@ -126,7 +142,9 @@ export function renderProduct(screen) {
     <p data-settlement="${screen.settlement}">Settlement ${escapeHtml(screen.settlement)}</p>
     <p data-fee>${escapeHtml(screen.feeLabel)}. Slippage ${screen.slippageBps} bps (not applied while the fee is unknown).</p>
     <p role="status" data-service="${escapeHtml(screen.phase)}">${serviceCopy(screen.phase)}</p>
-    <button type="button" data-retry="read" ${retryable ? '' : 'disabled'}>Retry read</button>
+    <p data-quote="${escapeHtml(screen.quote.state)}">Quote ${escapeHtml(screen.quote.state)}. Trading is not submitted from this page.</p>
+    <p data-reservation="${escapeHtml(screen.reservation.state)}">Reservation ${escapeHtml(screen.reservation.state)}.</p>
+    <button type="button" data-retry="read" style="min-height:44px;min-width:44px" ${retryable ? '' : 'disabled'}>Retry read</button>
     ${screen.error ? `<p role="alert" data-error="${escapeHtml(screen.error)}">Request ${escapeHtml(screen.phase)}. Retry reads the API again and does not send a transfer.</p>` : ''}
     <table><thead><tr><th>Asset</th><th>Kind</th><th>Chain</th><th>Balance</th><th>Value</th><th>Routes</th></tr></thead><tbody>${rows}</tbody></table>
     <ul>${history}</ul>
