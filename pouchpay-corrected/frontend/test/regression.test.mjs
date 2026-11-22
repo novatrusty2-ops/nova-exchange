@@ -4,6 +4,8 @@ import { readFiatRailCatalog, fiatRailView } from '../src/fiat-rails.mjs';
 import { presentPrice, portfolioTotal, displayName, isBlockedToken, isAlltraWeth, assetClass } from '../src/price-identity.mjs';
 import { presentKyc, gateAction } from '../src/kyc.mjs';
 import { settlementLabel } from '../src/settlement.mjs';
+import { chainReady } from '../src/chain-gate.mjs';
+import { ROUTE_MATRIX } from '../src/bank-contracts.mjs';
 import { swapErrorMessage } from '../src/swap-errors.mjs';
 import { listTokens } from '../src/catalog.mjs';
 import { createClient } from '../src/client.mjs';
@@ -111,4 +113,44 @@ test('session, rejection, jurisdiction, and settlement states stay closed', () =
   assert.equal(assetClass(eth), 'native-eth');
   assert.equal(assetClass(weth), 'alltra-weth');
   assert.notEqual(eth.chainId, weth.chainId);
+  const contradictory = { provider: 'sumsub', verified: true, reviewStatus: 'completed', reviewAnswer: 'RED', jurisdiction: { source: 'sumsub', verified: true } };
+  assert.equal(presentKyc(session, contradictory, 200).display, 'Verification rejected');
+  assert.equal(presentKyc(session, contradictory, 200).allowsSensitive, false);
+  assert.equal(presentKyc(session, { provider: 'sumsub', verified: true, reviewStatus: 'pending', reviewAnswer: 'PENDING' }, 200).display, 'Verification pending');
+});
+
+test('bank writes stay blocked and NovaONE stays disabled without verified chain evidence', async () => {
+  let calls = 0;
+  let auth = null;
+  const client = createClient({
+    session: { token: 'session-token' },
+    fetchImpl: (_url, init) => {
+      calls += 1;
+      auth = init.headers.authorization;
+      return Promise.resolve({ ok: false, status: 401, json: async () => ({}) });
+    },
+  });
+  const blocked = await client.request('/fiat/transactions/REF/credit', { method: 'POST', body: { amount: '1' } });
+  assert.equal(blocked.error, 'financial_execution_disabled');
+  assert.equal(calls, 0);
+  const held = await client.customerKycMe();
+  assert.equal(held.error, 'codex_verification_required');
+  assert.equal(calls, 0);
+  const expired = await client.health();
+  assert.equal(expired.state, 'expired');
+  assert.equal(auth, 'Bearer session-token');
+  assert.equal(ROUTE_MATRIX.find((row) => row.id === 'sumsub-webhook').customerCall, false);
+  assert.equal(chainReady(22016, null).reason, 'chain_unverified');
+  assert.equal(chainReady(33001, { chainId: 22016, configurationVerified: true }).reason, 'chain_mismatch');
+  assert.equal(chainReady(22016, { chainId: 22016, configurationVerified: true }).enabled, true);
+  const screen = await loadProductScreen('nova-x', {
+    health: async () => ({ ok: true, state: 'ready', status: 200, data: {} }),
+    reserves: async () => ({ ok: true, state: 'ready', status: 200, data: { success: true, account: '1', verified: false, status: 'declared, not verified' } }),
+    ledgerBridge: async () => ({ ok: true, state: 'ready', status: 200, data: { success: false, settled: false } }),
+    kyc: async () => ({ ok: false, state: 'failure', status: 404, data: null }),
+    history: async () => ({ ok: true, state: 'ready', status: 200, data: { items: [] } }),
+  });
+  assert.equal(screen.chain.enabled, false);
+  assert.equal(screen.tokens[0].routes.swap.reason, 'chain_unverified');
+  assert.match(renderProduct(screen), /Retry read/);
 });

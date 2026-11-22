@@ -3,6 +3,8 @@
  * The backend remains the authority for KYC, balances, and settlement.
  */
 
+import { customerRead, isBlockedWalletPath } from './bank-contracts.mjs';
+
 export const FINANCIAL_POSTS = [
   '/vault/swap',
   '/api/v1/ledger-bridge/settle',
@@ -24,13 +26,13 @@ const READS = {
   fiatRails: '/api/v1/nova-x/fiat-rails',
 };
 
-export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeoutMs = 8000 } = {}) {
+export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeoutMs = 8000, session = null } = {}) {
   const inflight = new Map();
 
   async function request(path, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
-    if (method !== 'GET' && FINANCIAL_POSTS.some((prefix) => path === prefix || path.startsWith(prefix))) {
-      return { ok: false, state: 'blocked', status: 0, data: null, error: 'financial_execution_disabled' };
+    if (isBlockedWalletPath(path) || (method !== 'GET' && FINANCIAL_POSTS.some((prefix) => path === prefix || path.startsWith(prefix)))) {
+      return { ok: false, state: 'blocked', status: 0, data: null, error: 'financial_execution_disabled', retrySendsFunds: false };
     }
     const key = options.idempotencyKey || null;
     if (key && inflight.has(key)) {
@@ -43,11 +45,21 @@ export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeo
       try {
         const response = await fetchImpl(`${baseUrl}${path}`, {
           method,
-          headers: { accept: 'application/json', ...(options.headers || {}) },
+          headers: {
+            accept: 'application/json',
+            ...(session?.token ? { authorization: `Bearer ${session.token}` } : {}),
+            ...(options.headers || {}),
+          },
           body: options.body == null ? undefined : JSON.stringify(options.body),
           signal: options.signal || controller.signal,
         });
         const data = await response.json().catch(() => null);
+        if (response.status === 401) {
+          return { ok: false, state: 'expired', status: 401, data, error: 'session_expired' };
+        }
+        if (response.status === 503) {
+          return { ok: false, state: 'unavailable', status: 503, data, error: 'unavailable' };
+        }
         if (!response.ok) {
           return { ok: false, state: 'failure', status: response.status, data, error: `http_${response.status}` };
         }
@@ -95,6 +107,8 @@ export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeo
     kyc: () => request(READS.kyc),
     history: () => request(READS.history),
     fiatRails: () => request(READS.fiatRails),
+    customerKycMe: () => customerRead(),
+    customerHistory: () => customerRead(),
     rpc: (productGateway, body) => request(productGateway, { method: 'POST', body, idempotencyKey: `rpc:${body?.id}:${body?.method}` }),
   };
 }

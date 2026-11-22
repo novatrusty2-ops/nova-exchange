@@ -9,10 +9,11 @@ import { evaluateRoute } from './routes.mjs';
 import { settlementLabel, visibleHistory } from './settlement.mjs';
 import { mergeAccount } from './accounts.mjs';
 import { checkReservesStatus, checkVaultReserves } from './contract.mjs';
+import { chainReady } from './chain-gate.mjs';
 
 const ACTIONS = ['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge', 'liquidity'];
 
-export async function loadProductScreen(productId, client, { previousAccount = null, customTokens = [], slippageBps = 50, session = null } = {}) {
+export async function loadProductScreen(productId, client, { previousAccount = null, customTokens = [], slippageBps = 50, session = null, chainEvidence = null } = {}) {
   const product = getProduct(productId);
   const [health, reserves, bridge, vault, kycRes, historyRes] = await Promise.all([
     client.health(),
@@ -23,7 +24,10 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     client.history(),
   ]);
 
-  const failed = [health, reserves, bridge, kycRes, historyRes].find((item) => item.state === 'timeout' || item.state === 'failure');
+  const failed = [health, reserves, bridge, kycRes, historyRes].find((item) => ['timeout', 'failure', 'expired', 'unavailable'].includes(item.state));
+  const chain = productId === 'pouchpay'
+    ? { enabled: true, reason: null }
+    : chainReady(product.chainId, chainEvidence);
   const kyc = presentKyc(session, kycRes.data, kycRes.status || (kycRes.ok ? 200 : 404));
   const fiat = productId === 'nova-x' && client.fiatRails
     ? fiatRailView(await client.fiatRails())
@@ -41,9 +45,8 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     const balance = verifiedBalance(account, token);
     const withBalance = { ...token, balance };
     const price = presentPrice({ ...token, balance });
-    const routes = Object.fromEntries(ACTIONS.map((action) => [
-      action,
-      evaluateRoute({
+    const routes = Object.fromEntries(ACTIONS.map((action) => {
+      const route = evaluateRoute({
         action,
         token: withBalance,
         kyc,
@@ -51,8 +54,10 @@ export async function loadProductScreen(productId, client, { previousAccount = n
         bridge: bridge.data,
         feeBps: null,
         slippageBps,
-      }),
-    ]));
+      });
+      if (!chain.enabled) return [action, { ...route, enabled: false, reason: chain.reason }];
+      return [action, route];
+    }));
     return {
       ...withBalance,
       value: { valueLabel: price.text, usd: price.usd, includeInTotal: price.includeInTotal },
@@ -86,6 +91,7 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     fiat,
     swapError,
     portfolio: portfolioTotal(tokens.map((token) => token.value)),
+    chain,
   };
 }
 
@@ -109,7 +115,8 @@ export function renderProduct(screen) {
     ? screen.history.map((item) => `<li>${escapeHtml(item.id)} · ${escapeHtml(item.settlement)}</li>`).join('')
     : '<li>No confirmed activity</li>';
 
-  return `<section data-product="${screen.product.id}" data-phase="${screen.phase}">
+  const retryable = screen.phase === 'timeout' || screen.phase === 'failure' || screen.phase === 'unavailable';
+  return `<section data-product="${screen.product.id}" data-phase="${screen.phase}" aria-busy="false">
     <h1>${escapeHtml(screen.product.name)}</h1>
     <p>Chain ${screen.product.chainId}. Vault ${escapeHtml(String(screen.vaultStatus))}.</p>
     <p data-kyc="${screen.kyc.state}">${escapeHtml(screen.kyc.display || screen.kyc.state)}</p>
@@ -118,10 +125,19 @@ export function renderProduct(screen) {
     ${screen.swapError ? `<p data-swap-error="${escapeHtml(screen.swapError.code)}">${escapeHtml(screen.swapError.message)}</p>` : ''}
     <p data-settlement="${screen.settlement}">Settlement ${escapeHtml(screen.settlement)}</p>
     <p data-fee>${escapeHtml(screen.feeLabel)}. Slippage ${screen.slippageBps} bps (not applied while the fee is unknown).</p>
-    ${screen.error ? `<p data-error="${escapeHtml(screen.error)}">Request ${escapeHtml(screen.phase)}. Retry when the API answers.</p>` : ''}
+    <p role="status" data-service="${escapeHtml(screen.phase)}">${serviceCopy(screen.phase)}</p>
+    <button type="button" data-retry="read" ${retryable ? '' : 'disabled'}>Retry read</button>
+    ${screen.error ? `<p role="alert" data-error="${escapeHtml(screen.error)}">Request ${escapeHtml(screen.phase)}. Retry reads the API again and does not send a transfer.</p>` : ''}
     <table><thead><tr><th>Asset</th><th>Kind</th><th>Chain</th><th>Balance</th><th>Value</th><th>Routes</th></tr></thead><tbody>${rows}</tbody></table>
     <ul>${history}</ul>
   </section>`;
+}
+
+function serviceCopy(phase) {
+  if (phase === 'ready') return 'Balances loaded.';
+  if (phase === 'timeout' || phase === 'unavailable') return 'Service unavailable.';
+  if (phase === 'expired') return 'Session expired.';
+  return 'The service could not be read.';
 }
 
 function fiatMarkup(fiat) {

@@ -12,6 +12,7 @@ Review date: 2026-11-22. Decision: **NO-GO** for production, Play publishing, an
 - Swap, bridge, deposit, withdraw, and liquidity routes stay disabled without backend authorization.
 - Settlement labels are confirmed, pending, failed, reorganization, or unconfirmed. A reorg overrides an earlier settled flag.
 - `npm run test:frontend` covers these cases.
+- Bank fiat POSTs, KYC start, and the Sumsub webhook are refused by the wallet client. Customer GETs observed in Nova Bank source are not called until Codex confirms them.
 
 ## NO-GO
 

@@ -48,6 +48,9 @@ export function presentKyc(session, body, httpStatus, now = Date.now()) {
   if (parsed.reviewAnswer === 'RED') {
     return { ...parsed, state: 'rejected', allowsSensitive: false, display: 'Verification rejected' };
   }
+  if (parsed.reviewStatus === 'pending' || parsed.reviewAnswer === 'PENDING') {
+    return { ...parsed, state: 'pending', allowsSensitive: false, display: 'Verification pending' };
+  }
   if (parsed.state === 'approved') {
     if (jurisdiction?.verified !== true || jurisdiction?.source !== 'sumsub') {
       return { ...parsed, state: 'unavailable', allowsSensitive: false, display: 'Jurisdiction not confirmed' };
@@ -69,6 +72,7 @@ export function gateAction(action, kyc) {
     unavailable: 'kyc_unavailable',
     expired: 'session_expired',
     rejected: 'kyc_rejected',
+    pending: 'kyc_required',
     restricted: 'jurisdiction_restricted',
   }[kyc?.state] || 'kyc_required';
   return { allowed: false, reason };
