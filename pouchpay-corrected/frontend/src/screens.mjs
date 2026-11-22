@@ -1,0 +1,231 @@
+import { getProduct } from './networks.mjs';
+import { listTokens, tokensByKind, TOKEN_KINDS, rapidTokens } from './catalog.mjs';
+import { UNPRICED } from './pricing.mjs';
+import { presentKyc } from './kyc.mjs';
+import { assetClass, displayName, isBlockedToken, portfolioTotal, presentPrice } from './price-identity.mjs';
+import { fiatRailView } from './fiat-rails.mjs';
+import { swapErrorMessage } from './swap-errors.mjs';
+import { evaluateRoute } from './routes.mjs';
+import { confirmationState, settlementLabel, visibleHistory } from './settlement.mjs';
+import { displayAccountReserves, mergeAccount } from './accounts.mjs';
+import { checkReservesStatus, checkVaultReserves } from './contract.mjs';
+import { chainReady } from './chain-gate.mjs';
+import { actionCapability } from './capabilities.mjs';
+import { quotePreview } from './quotes.mjs';
+import { pageHistory } from './history-page.mjs';
+import { reservationView } from './reservations.mjs';
+import { bindWallet, redactIdentifier } from './redaction.mjs';
+import { buildTradingPanel, presentFeeAndGas, presentSlippage } from './trading.mjs';
+import { superBridgeRouteMatrix, interpretSuperBridgeTransfer, shouldAutoRetrySuperBridge } from './super-bridge.mjs';
+
+const ACTIONS = ['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge', 'liquidity'];
+
+export async function loadProductScreen(productId, client, {
+  previousAccount = null,
+  customTokens = [],
+  slippageBps = 50,
+  session = null,
+  chainEvidence = null,
+  quoteEvidence = null,
+  reservationEvidence = null,
+  feeEvidence = null,
+  liquidityEvidence = null,
+  selectedSymbol = 'ETH',
+  now = Date.now(),
+} = {}) {
+  const product = getProduct(productId);
+  const [health, reserves, bridge, vault, kycRes, historyRes] = await Promise.all([
+    client.health(),
+    client.reserves(),
+    client.ledgerBridge(),
+    productId === 'pouchpay' ? client.vaultReserves() : Promise.resolve({ ok: false, state: 'failure', data: null, error: 'no_alltra_pools' }),
+    client.kyc(),
+    client.history(),
+  ]);
+
+  const failed = [health, reserves, bridge, kycRes, historyRes].find((item) => ['timeout', 'failure', 'expired', 'unavailable', 'maintenance'].includes(item.state));
+  const chain = productId === 'pouchpay'
+    ? { enabled: true, reason: null }
+    : chainReady(product.chainId, chainEvidence);
+  const kyc = presentKyc(session, kycRes.data, kycRes.status || (kycRes.ok ? 200 : 404));
+  const fiat = productId === 'nova-x' && client.fiatRails
+    ? fiatRailView(await client.fiatRails())
+    : { state: 'unavailable', buyCrypto: [], sellCrypto: [] };
+  const swapError = historyRes.data?.errorCode
+    ? swapErrorMessage(historyRes.data.errorCode, historyRes.data.httpStatus ?? null)
+    : null;
+  const account = checkReservesStatus(reserves.data)
+    ? mergeAccount(previousAccount, reserves.data)
+    : mergeAccount(previousAccount, null);
+
+  const pools = checkVaultReserves(vault.data) ? vault.data.pools : [];
+  const tokens = listTokens(productId, customTokens).filter((token) => !isBlockedToken(token.chainId, token.address)).map((token) => {
+    const pool = pools.find((item) => item.token === token.symbol || item.token === token.id);
+    const balance = verifiedBalance(account, token);
+    const withBalance = { ...token, balance };
+    const price = presentPrice({ ...token, balance });
+    const routes = Object.fromEntries(ACTIONS.map((action) => {
+      const route = evaluateRoute({
+        action,
+        token: withBalance,
+        kyc,
+        pool: pool ? { ...pool, status: vault.data?.status } : null,
+        bridge: bridge.data,
+        feeBps: null,
+        slippageBps,
+      });
+      if (!chain.enabled) return [action, { ...route, enabled: false, reason: chain.reason }];
+      return [action, route];
+    }));
+    return {
+      ...withBalance,
+      value: { valueLabel: price.text, usd: price.usd, includeInTotal: price.includeInTotal },
+      displayName: displayName(token),
+      assetClass: assetClass(token),
+      routes,
+      pool: pool || null,
+    };
+  });
+
+  const rawHistory = historyRes.ok ? (historyRes.data?.items || historyRes.data || []) : [];
+  const historyPage = pageHistory(Array.isArray(rawHistory) ? rawHistory : [], {
+    accountId: session?.accountId ?? null,
+    offset: 0,
+    limit: 20,
+  });
+  const historyItems = visibleHistory(historyPage.items);
+  const wallet = bindWallet(session, { address: session?.address });
+  const fees = presentFeeAndGas(feeEvidence);
+  const slippage = presentSlippage(slippageBps, { feeBps: fees.feeBps });
+  const trading = buildTradingPanel({
+    selectedSymbol,
+    selectedChainId: productId === 'nova-x' ? 1 : product.chainId,
+    kyc,
+    quoteEvidence,
+    feeEvidence,
+    liquidityEvidence,
+    slippageBps,
+    historyItems: Array.isArray(rawHistory) ? rawHistory : [],
+    accountId: session?.accountId ?? null,
+    now,
+  });
+  const superBridge = {
+    matrix: superBridgeRouteMatrix(),
+    availableCount: superBridgeRouteMatrix().filter((row) => row.available).length,
+    transferBlocked: true,
+    interpretation: interpretSuperBridgeTransfer(null, { clientState: 'blocked' }),
+    autoRetry: shouldAutoRetrySuperBridge(interpretSuperBridgeTransfer(null, { clientState: 'timeout' })),
+  };
+  const reservesDisplay = displayAccountReserves(account);
+
+  return {
+    product,
+    phase: failed ? failed.state : 'ready',
+    error: failed?.error || null,
+    kyc,
+    account,
+    reservesDisplay,
+    settlement: settlementLabel(bridge.data),
+    bridgeReady: bridge.data?.ready === true && bridge.data?.success === true,
+    vaultStatus: vault.ok ? vault.data.status : 'UNAVAILABLE',
+    warnings: vault.data?.warnings || [],
+    tokens,
+    kinds: Object.fromEntries(TOKEN_KINDS.map((kind) => [kind, tokensByKind(productId, kind, customTokens).length])),
+    rapidSupported: rapidTokens().length,
+    history: historyItems,
+    slippageBps,
+    slippage,
+    feeLabel: fees.feeLabel,
+    gasLabel: fees.gasLabel,
+    fiat,
+    swapError,
+    portfolio: portfolioTotal(tokens.map((token) => token.value)),
+    chain,
+    quote: quotePreview(quoteEvidence, now),
+    trading,
+    superBridge,
+    reservation: reservationView(reservationEvidence, now),
+    historyPage,
+    wallet,
+    capabilities: Object.fromEntries(ACTIONS.map((action) => [action, actionCapability({ action })])),
+    confirmation: confirmationState(bridge.data),
+  };
+}
+
+export function renderProduct(screen) {
+  const rows = screen.tokens.map((token) => {
+    const routeSummary = ACTIONS.map((action) => {
+      const route = token.routes[action];
+      return `${action}:${route.enabled ? 'on' : route.reason}`;
+    }).join(' ');
+    return `<tr data-kind="${token.kind}" data-asset="${escapeHtml(token.assetClass)}" data-id="${escapeHtml(token.id)}">
+      <td>${escapeHtml(token.displayName)}</td>
+      <td>${escapeHtml(token.kind)}</td>
+      <td>${token.chainId}</td>
+      <td>${token.balance == null ? '—' : escapeHtml(String(token.balance))}</td>
+      <td>${escapeHtml(token.value.valueLabel)}</td>
+      <td>${escapeHtml(routeSummary)}</td>
+    </tr>`;
+  }).join('');
+
+  const history = screen.history.length
+    ? screen.history.map((item) => `<li>${escapeHtml(item.id)} · ${escapeHtml(item.settlement)}</li>`).join('')
+    : '<li>No confirmed activity</li>';
+
+  const retryable = screen.phase === 'timeout' || screen.phase === 'failure' || screen.phase === 'unavailable';
+  return `<section data-product="${screen.product.id}" data-phase="${screen.phase}" aria-busy="false">
+    <style>table{width:100%;display:block;overflow-x:auto} a,button{min-height:44px;min-width:44px}</style>
+    <nav aria-label="Applications"><a href="./pouchpay.html">PouchPay</a> <a href="./novaplus.html">Nova Plus</a> <a href="./novax.html">Nova X</a></nav>
+    <h1>${escapeHtml(screen.product.name)}</h1>
+    <p>Account ${escapeHtml(redactIdentifier(screen.account?.account))}. Wallet ${escapeHtml(redactIdentifier(screen.wallet?.address))}.</p>
+    <p>Chain ${screen.product.chainId}. Vault ${escapeHtml(String(screen.vaultStatus))}.</p>
+    <p data-kyc="${screen.kyc.state}">${escapeHtml(screen.kyc.display || screen.kyc.state)}</p>
+    <p data-portfolio="${escapeHtml(screen.portfolio.label)}">Portfolio ${escapeHtml(screen.portfolio.label)}</p>
+    <p data-fiat="${screen.fiat.state}">${screen.fiat.state === 'ready' ? fiatMarkup(screen.fiat) : 'Fiat rail availability is unavailable.'}</p>
+    ${screen.swapError ? `<p data-swap-error="${escapeHtml(screen.swapError.code)}">${escapeHtml(screen.swapError.message)}</p>` : ''}
+    <p data-settlement="${screen.settlement}">Settlement ${escapeHtml(screen.settlement)}</p>
+    <p data-request="${screen.confirmation.request}" data-completed="${screen.confirmation.completed}">Request ${escapeHtml(screen.confirmation.request)}. Settlement ${escapeHtml(screen.confirmation.settlement)}.</p>
+    <p data-fee>${escapeHtml(screen.feeLabel)}. ${escapeHtml(screen.gasLabel || 'Gas unavailable')}. ${escapeHtml(screen.slippage?.label || `Slippage ${screen.slippageBps} bps`)}.</p>
+    <p role="status" data-service="${escapeHtml(screen.phase)}">${serviceCopy(screen.phase)}</p>
+    <p data-quote="${escapeHtml(screen.quote.state)}">Quote ${escapeHtml(screen.quote.state)}. Trading is not submitted from this page.</p>
+    <p data-trading-route="${escapeHtml(screen.trading?.route?.state || 'unsupported')}">Trade route ${escapeHtml(screen.trading?.route?.label || 'unavailable')}. Can trade: ${screen.trading?.canTrade === true ? 'yes' : 'no'}.</p>
+    <p data-super-bridge-available="${screen.superBridge?.availableCount ?? 0}">Super Bridge live routes: ${screen.superBridge?.availableCount ?? 0}. Transfer blocked: ${screen.superBridge?.transferBlocked === true ? 'yes' : 'no'}. Auto-retry: ${screen.superBridge?.autoRetry === true ? 'yes' : 'no'}.</p>
+    <p data-reserves="${escapeHtml(screen.reservesDisplay?.label || 'unavailable')}">Reserves ${escapeHtml(screen.reservesDisplay?.label || 'unavailable')}.</p>
+    <p data-reservation="${escapeHtml(screen.reservation.state)}">Reservation ${escapeHtml(screen.reservation.state)}.</p>
+    <button type="button" data-retry="read" style="min-height:44px;min-width:44px" ${retryable ? '' : 'disabled'}>Retry read</button>
+    ${screen.error ? `<p role="alert" data-error="${escapeHtml(screen.error)}">Request ${escapeHtml(screen.phase)}. Retry reads the API again and does not send a transfer.</p>` : ''}
+    <table><thead><tr><th>Asset</th><th>Kind</th><th>Chain</th><th>Balance</th><th>Value</th><th>Routes</th></tr></thead><tbody>${rows}</tbody></table>
+    <ul>${history}</ul>
+  </section>`;
+}
+
+function serviceCopy(phase) {
+  if (phase === 'ready') return 'Balances loaded.';
+  if (phase === 'maintenance') return 'The service is in maintenance. No transfer was sent.';
+  if (phase === 'timeout' || phase === 'unavailable') return 'Service unavailable.';
+  if (phase === 'expired') return 'Session expired.';
+  return 'The service could not be read.';
+}
+
+function fiatMarkup(fiat) {
+  const lines = [...fiat.buyCrypto, ...fiat.sellCrypto].map((row) => `${row.provider} ${row.currency} ${row.country} ${row.rails.join(' ')}`);
+  return escapeHtml(lines.join('; ') || 'No public rail capabilities');
+}
+
+function verifiedBalance(account, token) {
+  if (!account?.verified || !account.balances) return null;
+  const balances = account.balances;
+  if (typeof balances !== 'object') return null;
+  const raw = balances[token.id] ?? balances[token.symbol];
+  return typeof raw === 'number' ? raw : null;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+export { UNPRICED };
