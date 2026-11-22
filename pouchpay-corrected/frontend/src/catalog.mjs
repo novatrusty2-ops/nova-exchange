@@ -8,6 +8,21 @@ import { isBlockedToken } from './price-identity.mjs';
 
 export const TOKEN_KINDS = ['catalog', 'smart', 'native', 'rapid', 'stable', 'wrapped', 'custom'];
 
+const ETHEREUM_NATIVE = {
+  id: 'ETH',
+  symbol: 'ETH',
+  name: 'Ether',
+  kind: 'native',
+  decimals: 18,
+  address: null,
+  native: true,
+  pegVerified: false,
+  productId: 'pouchpay',
+  chainId: 1,
+  supported: false,
+  depositRouteVerified: false,
+};
+
 const ALLTRA = [
   { id: 'ALL', symbol: 'ALL', kind: 'native', classes: ['native', 'smart'], chainFamily: 'smart', decimals: 18, address: '0x0000000000000000000000000000000000000000', native: true, pegVerified: false },
   { id: '$BUCKS', symbol: '$BUCKS', kind: 'catalog', decimals: 18, address: '0x90a72d1cc06434938671e3e10c8774870bd40e41', pegVerified: false },
@@ -71,7 +86,8 @@ export function listTokens(productId, customTokens = []) {
       supported: false,
     });
   }
-  return [...base, ...custom];
+  const eth = productId === 'pouchpay' ? [ETHEREUM_NATIVE] : [];
+  return [...base, ...eth, ...custom];
 }
 
 export function tokensByKind(productId, kind, customTokens = []) {

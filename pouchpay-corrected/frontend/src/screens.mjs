@@ -2,7 +2,7 @@ import { getProduct } from './networks.mjs';
 import { listTokens, tokensByKind, TOKEN_KINDS, rapidTokens } from './catalog.mjs';
 import { UNPRICED } from './pricing.mjs';
 import { presentKyc } from './kyc.mjs';
-import { displayName, isBlockedToken, portfolioTotal, presentPrice } from './price-identity.mjs';
+import { assetClass, displayName, isBlockedToken, portfolioTotal, presentPrice } from './price-identity.mjs';
 import { fiatRailView } from './fiat-rails.mjs';
 import { swapErrorMessage } from './swap-errors.mjs';
 import { evaluateRoute } from './routes.mjs';
@@ -57,6 +57,7 @@ export async function loadProductScreen(productId, client, { previousAccount = n
       ...withBalance,
       value: { valueLabel: price.text, usd: price.usd, includeInTotal: price.includeInTotal },
       displayName: displayName(token),
+      assetClass: assetClass(token),
       routes,
       pool: pool || null,
     };
@@ -94,7 +95,7 @@ export function renderProduct(screen) {
       const route = token.routes[action];
       return `${action}:${route.enabled ? 'on' : route.reason}`;
     }).join(' ');
-    return `<tr data-kind="${token.kind}" data-id="${escapeHtml(token.id)}">
+    return `<tr data-kind="${token.kind}" data-asset="${escapeHtml(token.assetClass)}" data-id="${escapeHtml(token.id)}">
       <td>${escapeHtml(token.displayName)}</td>
       <td>${escapeHtml(token.kind)}</td>
       <td>${token.chainId}</td>

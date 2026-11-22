@@ -13,6 +13,16 @@ export function isBlockedToken(chainId, address) {
   return Number(chainId) === ALLTRA_CHAIN_ID && BLOCKED.has(String(address || '').toLowerCase());
 }
 
+export function assetClass(token) {
+  if (isBlockedToken(token?.chainId, token?.address)) return 'blocked';
+  if (isAlltraWeth(token)) return 'alltra-weth';
+  if (Number(token?.chainId) === 1 && token?.native === true) return 'native-eth';
+  if (token?.kind === 'wrapped') return 'wrapped';
+  if (token?.kind === 'custom') return 'custom';
+  if (token?.kind === 'native') return 'native';
+  return token?.kind || 'unknown';
+}
+
 export function isAlltraWeth(token) {
   return Number(token?.chainId) === ALLTRA_CHAIN_ID
     && String(token?.address || '').toLowerCase() === ALLTRA_WETH_ADDRESS;

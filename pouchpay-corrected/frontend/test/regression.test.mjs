@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFiatRailCatalog, fiatRailView } from '../src/fiat-rails.mjs';
-import { presentPrice, portfolioTotal, displayName, isBlockedToken, isAlltraWeth } from '../src/price-identity.mjs';
-import { presentKyc } from '../src/kyc.mjs';
+import { presentPrice, portfolioTotal, displayName, isBlockedToken, isAlltraWeth, assetClass } from '../src/price-identity.mjs';
+import { presentKyc, gateAction } from '../src/kyc.mjs';
+import { settlementLabel } from '../src/settlement.mjs';
 import { swapErrorMessage } from '../src/swap-errors.mjs';
 import { listTokens } from '../src/catalog.mjs';
 import { createClient } from '../src/client.mjs';
@@ -24,7 +25,8 @@ test('signed-out sessions cannot display a verified Sumsub decision', () => {
   const body = { provider: 'sumsub', reviewStatus: 'completed', reviewAnswer: 'GREEN', verified: true };
   assert.equal(presentKyc(null, body, 200).state, 'unavailable');
   assert.equal(presentKyc(null, body, 200).allowsSensitive, false);
-  assert.equal(presentKyc(session, body, 200).display, 'Verified');
+  assert.equal(presentKyc(session, body, 200).display, 'Jurisdiction not confirmed');
+  assert.equal(presentKyc(session, body, 200).allowsSensitive, false);
   assert.equal(presentKyc(session, { success: false }, 503).display, 'KYC status unavailable');
 });
 
@@ -66,7 +68,7 @@ test('Nova X screen renders rail capabilities without bank instructions', async 
     health: async () => ({ ok: true, state: 'ready', status: 200, data: {} }),
     reserves: async () => ({ ok: true, state: 'ready', status: 200, data: { success: true, account: '6572', verified: true, status: 'verified by bank API', balances: {} } }),
     ledgerBridge: async () => ({ ok: true, state: 'ready', status: 200, data: { success: false, ready: false, settled: false } }),
-    kyc: async () => ({ ok: true, state: 'ready', status: 200, data: { provider: 'sumsub', verified: true, reviewStatus: 'completed', reviewAnswer: 'GREEN' } }),
+    kyc: async () => ({ ok: true, state: 'ready', status: 200, data: { provider: 'sumsub', verified: true, reviewStatus: 'completed', reviewAnswer: 'GREEN', jurisdiction: { source: 'sumsub', verified: true, country: 'GB' } } }),
     history: async () => ({ ok: true, state: 'ready', status: 200, data: { errorCode: 'regional_swap_limit_unpriced', items: [] } }),
     fiatRails: async () => ({
       ok: true,
@@ -87,4 +89,26 @@ test('Nova X screen renders rail capabilities without bank instructions', async 
   assert.equal(screen.portfolio.label, 'not available');
   assert.equal(screen.kyc.display, 'Verified');
   for (const token of screen.tokens) assert.equal(token.routes.liquidity.enabled, false);
+});
+
+test('session, rejection, jurisdiction, and settlement states stay closed', () => {
+  const green = { provider: 'sumsub', verified: true, reviewStatus: 'completed', reviewAnswer: 'GREEN' };
+  const now = Date.parse('2026-11-22T12:00:00Z');
+  assert.equal(presentKyc({ token: 't', expiresAt: '2026-11-22T11:00:00Z' }, green, 200, now).display, 'Session expired');
+  assert.equal(presentKyc(session, green, 401, now).state, 'expired');
+  assert.equal(presentKyc(session, { ...green, reviewAnswer: 'RED', verified: false }, 200, now).display, 'Verification rejected');
+  assert.equal(presentKyc(session, { ...green, jurisdiction: { source: 'sumsub', verified: false, restricted: true } }, 200, now).display, 'Restricted jurisdiction');
+  assert.equal(presentKyc(session, green, 200, now).display, 'Jurisdiction not confirmed');
+  assert.equal(gateAction('withdraw', presentKyc(session, green, 200, now)).allowed, false);
+  const approved = presentKyc(session, { ...green, jurisdiction: { source: 'sumsub', verified: true } }, 200, now);
+  assert.equal(approved.display, 'Verified');
+  assert.equal(gateAction('withdraw', approved).allowed, true);
+  assert.equal(settlementLabel({ status: 'pending', settled: false }), 'pending');
+  assert.equal(settlementLabel({ status: 'failed', settled: false }), 'failed');
+  assert.equal(settlementLabel({ reorg: true, settled: true, success: true, evidence: { authoritative: true } }), 'reorganization');
+  const eth = listTokens('pouchpay').find((token) => token.id === 'ETH');
+  const weth = listTokens('pouchpay').find((token) => token.id === 'WETH');
+  assert.equal(assetClass(eth), 'native-eth');
+  assert.equal(assetClass(weth), 'alltra-weth');
+  assert.notEqual(eth.chainId, weth.chainId);
 });

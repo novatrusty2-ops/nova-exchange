@@ -31,7 +31,7 @@ test('products keep separate chain ids and reject the lab chain', () => {
 test('catalog covers every kind that is actually supported and leaves rapid empty', () => {
   for (const kind of TOKEN_KINDS) tokensByKind('pouchpay', kind);
   assert.ok(tokensByKind('pouchpay', 'catalog').length >= 2);
-  assert.equal(tokensByKind('pouchpay', 'native').length, 1);
+  assert.equal(tokensByKind('pouchpay', 'native').length, 2);
   assert.deepEqual(tokensByKind('pouchpay', 'smart').map((token) => token.id), ['ALL']);
   assert.equal(tokensByKind('pouchpay', 'stable').length, 2);
   assert.ok(tokensByKind('pouchpay', 'wrapped').some((token) => token.id === 'WALL'));
@@ -70,7 +70,7 @@ test('settlement and history ignore unaudited settled flags', () => {
     success: true,
     source: 'Nova Online Bank / Ledger Bridge',
     evidence: { authoritative: true },
-  }), 'settled');
+  }), 'confirmed');
   assert.equal(settlementLabel({ status: 'pending', settled: false }), 'pending');
   const rows = visibleHistory([{ id: 'a', source: 'bank', settled: true }, { settled: true }]);
   assert.equal(rows.length, 1);
