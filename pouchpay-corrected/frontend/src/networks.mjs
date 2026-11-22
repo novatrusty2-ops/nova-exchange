@@ -1,14 +1,16 @@
 /**
- * Per-product network config. RPC gateways are not shared across products.
- * Chain ids match pouchpay-corrected RpcController / control/app.json.
+ * Per-product network config. Chain ids come from manifest.mjs.
+ * RPC gateways are not shared across products.
  * Lab chain 922016 is never substituted for Nova X 22016.
  */
+
+import { APPS, CHAINS } from './manifest.mjs';
 
 export const PRODUCTS = {
   pouchpay: {
     id: 'pouchpay',
     name: 'PouchPay Alltra',
-    chainId: 651940,
+    chainId: CHAINS[APPS.pouchpay.chainKey].chainId,
     chainName: 'Alltra',
     rpc: 'https://mainnet-rpc.alltra.global',
     rpcGateway: null,
@@ -18,7 +20,7 @@ export const PRODUCTS = {
   'nova-plus': {
     id: 'nova-plus',
     name: 'Nova Plus',
-    chainId: 33001,
+    chainId: CHAINS[APPS['nova-plus'].chainKey].chainId,
     chainName: 'Nova Plus',
     rpc: null,
     rpcGateway: '/rpc/nova-plus',
@@ -28,7 +30,7 @@ export const PRODUCTS = {
   'nova-x': {
     id: 'nova-x',
     name: 'Nova X',
-    chainId: 22016,
+    chainId: CHAINS[APPS['nova-x'].chainKey].chainId,
     chainName: 'Nova X',
     rpc: null,
     rpcGateway: '/rpc/nova-x',

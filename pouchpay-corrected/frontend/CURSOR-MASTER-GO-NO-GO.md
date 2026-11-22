@@ -11,7 +11,7 @@ Date: 2026-11-22. Decision: **NO-GO** for production, Play publishing, and live 
 ## Evidence
 
 - Branch `feat/frontend-mobile-gonogo` on `novatrusty2-ops/nova-exchange`, draft PR #9.
-- `npm run test:frontend`: 26 passed, 0 failed. There is no TypeScript project and no production web build script for this UI.
+- `npm run test:frontend`: 29 passed, 0 failed. There is no TypeScript project and no production web build script for this UI.
 - Android debug and release builds were not run. JDK 17 and Android SDK 35 are required and were absent.
 
 ## Still required

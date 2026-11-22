@@ -58,7 +58,8 @@ export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeo
           return { ok: false, state: 'expired', status: 401, data, error: 'session_expired' };
         }
         if (response.status === 503) {
-          return { ok: false, state: 'unavailable', status: 503, data, error: 'unavailable' };
+          const maintenance = data?.code === 'maintenance';
+          return { ok: false, state: maintenance ? 'maintenance' : 'unavailable', status: 503, data, error: maintenance ? 'maintenance' : 'unavailable' };
         }
         if (!response.ok) {
           return { ok: false, state: 'failure', status: response.status, data, error: `http_${response.status}` };

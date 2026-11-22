@@ -6,7 +6,7 @@ import { assetClass, displayName, isBlockedToken, portfolioTotal, presentPrice }
 import { fiatRailView } from './fiat-rails.mjs';
 import { swapErrorMessage } from './swap-errors.mjs';
 import { evaluateRoute } from './routes.mjs';
-import { settlementLabel, visibleHistory } from './settlement.mjs';
+import { confirmationState, settlementLabel, visibleHistory } from './settlement.mjs';
 import { mergeAccount } from './accounts.mjs';
 import { checkReservesStatus, checkVaultReserves } from './contract.mjs';
 import { chainReady } from './chain-gate.mjs';
@@ -29,7 +29,7 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     client.history(),
   ]);
 
-  const failed = [health, reserves, bridge, kycRes, historyRes].find((item) => ['timeout', 'failure', 'expired', 'unavailable'].includes(item.state));
+  const failed = [health, reserves, bridge, kycRes, historyRes].find((item) => ['timeout', 'failure', 'expired', 'unavailable', 'maintenance'].includes(item.state));
   const chain = productId === 'pouchpay'
     ? { enabled: true, reason: null }
     : chainReady(product.chainId, chainEvidence);
@@ -107,6 +107,7 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     historyPage,
     wallet,
     capabilities: Object.fromEntries(ACTIONS.map((action) => [action, actionCapability({ action })])),
+    confirmation: confirmationState(bridge.data),
   };
 }
 
@@ -132,6 +133,8 @@ export function renderProduct(screen) {
 
   const retryable = screen.phase === 'timeout' || screen.phase === 'failure' || screen.phase === 'unavailable';
   return `<section data-product="${screen.product.id}" data-phase="${screen.phase}" aria-busy="false">
+    <style>table{width:100%;display:block;overflow-x:auto} a,button{min-height:44px;min-width:44px}</style>
+    <nav aria-label="Applications"><a href="./pouchpay.html">PouchPay</a> <a href="./novaplus.html">Nova Plus</a> <a href="./novax.html">Nova X</a></nav>
     <h1>${escapeHtml(screen.product.name)}</h1>
     <p>Account ${escapeHtml(redactIdentifier(screen.account?.account))}. Wallet ${escapeHtml(redactIdentifier(screen.wallet?.address))}.</p>
     <p>Chain ${screen.product.chainId}. Vault ${escapeHtml(String(screen.vaultStatus))}.</p>
@@ -140,6 +143,7 @@ export function renderProduct(screen) {
     <p data-fiat="${screen.fiat.state}">${screen.fiat.state === 'ready' ? fiatMarkup(screen.fiat) : 'Fiat rail availability is unavailable.'}</p>
     ${screen.swapError ? `<p data-swap-error="${escapeHtml(screen.swapError.code)}">${escapeHtml(screen.swapError.message)}</p>` : ''}
     <p data-settlement="${screen.settlement}">Settlement ${escapeHtml(screen.settlement)}</p>
+    <p data-request="${screen.confirmation.request}" data-completed="${screen.confirmation.completed}">Request ${escapeHtml(screen.confirmation.request)}. Settlement ${escapeHtml(screen.confirmation.settlement)}.</p>
     <p data-fee>${escapeHtml(screen.feeLabel)}. Slippage ${screen.slippageBps} bps (not applied while the fee is unknown).</p>
     <p role="status" data-service="${escapeHtml(screen.phase)}">${serviceCopy(screen.phase)}</p>
     <p data-quote="${escapeHtml(screen.quote.state)}">Quote ${escapeHtml(screen.quote.state)}. Trading is not submitted from this page.</p>
@@ -153,6 +157,7 @@ export function renderProduct(screen) {
 
 function serviceCopy(phase) {
   if (phase === 'ready') return 'Balances loaded.';
+  if (phase === 'maintenance') return 'The service is in maintenance. No transfer was sent.';
   if (phase === 'timeout' || phase === 'unavailable') return 'Service unavailable.';
   if (phase === 'expired') return 'Session expired.';
   return 'The service could not be read.';

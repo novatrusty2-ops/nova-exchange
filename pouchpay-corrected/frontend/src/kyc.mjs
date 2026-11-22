@@ -45,7 +45,8 @@ export function presentKyc(session, body, httpStatus, now = Date.now()) {
   if (jurisdiction?.restricted === true || (jurisdiction && (jurisdiction.verified !== true || jurisdiction.source !== 'sumsub'))) {
     return { ...parsed, state: 'restricted', allowsSensitive: false, display: 'Restricted jurisdiction' };
   }
-  if (parsed.reviewAnswer === 'RED') {
+  const nestedAnswer = body?.reviewResult?.reviewAnswer ?? null;
+  if (parsed.reviewAnswer === 'RED' || nestedAnswer === 'RED' || (parsed.reviewAnswer === 'GREEN' && nestedAnswer && nestedAnswer !== 'GREEN')) {
     return { ...parsed, state: 'rejected', allowsSensitive: false, display: 'Verification rejected' };
   }
   if (parsed.reviewStatus === 'pending' || parsed.reviewAnswer === 'PENDING') {

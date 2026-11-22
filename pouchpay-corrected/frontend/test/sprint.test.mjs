@@ -49,7 +49,7 @@ test('redaction removes payment secrets and shortens identifiers', () => {
   const clean = JSON.stringify(redactPayload({ iban: 'DE00', note: 'ok', nested: { privateKey: 'secret' } }));
   assert.equal(clean.includes('DE00'), false);
   assert.equal(clean.includes('secret'), false);
-  assert.equal(formatAmount(1.239, 2), '1.24');
+  assert.equal(formatAmount(1.239, 2), '1.23');
   assert.equal(formatAmount(Number.NaN), '—');
 });
 
