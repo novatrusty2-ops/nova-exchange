@@ -2,6 +2,8 @@
 
 Review date: 2026-11-22. Decision: **NO-GO** for production, Play publishing, and live financial operations.
 
+Batch 9 detail: `BATCH9-DELIVERY.md`. Super Bridge matrix: `SUPER-BRIDGE-ROUTE-MATRIX.md`.
+
 ## GO (isolated review only)
 
 - Public fiat-rail rendering keeps capability fields and rejects instruction fallbacks.
@@ -11,8 +13,11 @@ Review date: 2026-11-22. Decision: **NO-GO** for production, Play publishing, an
 - Unpriced and indicative rows stay out of portfolio USD.
 - Swap, bridge, deposit, withdraw, and liquidity routes stay disabled without backend authorization.
 - Settlement labels are confirmed, pending, failed, reorganization, or unconfirmed. A reorg overrides an earlier settled flag.
-- `npm run test:frontend` covers these cases.
-- Bank fiat POSTs, KYC start, and the Sumsub webhook are refused by the wallet client. Customer GETs observed in Nova Bank source are not called until Codex confirms them.
+- Super Bridge historical routes with no deployed contracts stay `route_unavailable`; transfer POST is blocked; ambiguous timeouts never auto-retry.
+- Popular tokens ETH/USDC/USDT/DAI/WBTC/UNI/LINK/AAVE require exact chainId+address; HHE3 stays unsupported (missing contract).
+- Account 6572 balances are not displayed as independently verified reserves.
+- `npm run test:frontend` covers these cases (41/41).
+- Bank fiat POSTs, KYC start, Sumsub webhook, and Super Bridge transfer are refused by the wallet client. Customer GETs observed in Nova Bank source are not called until Codex confirms them.
 
 ## NO-GO
 

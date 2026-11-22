@@ -8,3 +8,4 @@
 - Local backend routes for Sumsub status, activity, and fiat rails are missing.
 - Bank customer reads are not called. Fiat transaction POSTs are blocked in the client.
 - No Android project and no Play listing from this branch.
+- Batch 9: Account 6572 is never shown as independently verified reserves; Super Bridge transfer POST stays blocked. See `BATCH9-DELIVERY.md`.

@@ -7,7 +7,7 @@ import { fiatRailView } from './fiat-rails.mjs';
 import { swapErrorMessage } from './swap-errors.mjs';
 import { evaluateRoute } from './routes.mjs';
 import { confirmationState, settlementLabel, visibleHistory } from './settlement.mjs';
-import { mergeAccount } from './accounts.mjs';
+import { displayAccountReserves, mergeAccount } from './accounts.mjs';
 import { checkReservesStatus, checkVaultReserves } from './contract.mjs';
 import { chainReady } from './chain-gate.mjs';
 import { actionCapability } from './capabilities.mjs';
@@ -15,10 +15,24 @@ import { quotePreview } from './quotes.mjs';
 import { pageHistory } from './history-page.mjs';
 import { reservationView } from './reservations.mjs';
 import { bindWallet, redactIdentifier } from './redaction.mjs';
+import { buildTradingPanel, presentFeeAndGas, presentSlippage } from './trading.mjs';
+import { superBridgeRouteMatrix, interpretSuperBridgeTransfer, shouldAutoRetrySuperBridge } from './super-bridge.mjs';
 
 const ACTIONS = ['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge', 'liquidity'];
 
-export async function loadProductScreen(productId, client, { previousAccount = null, customTokens = [], slippageBps = 50, session = null, chainEvidence = null, quoteEvidence = null, reservationEvidence = null, now = Date.now() } = {}) {
+export async function loadProductScreen(productId, client, {
+  previousAccount = null,
+  customTokens = [],
+  slippageBps = 50,
+  session = null,
+  chainEvidence = null,
+  quoteEvidence = null,
+  reservationEvidence = null,
+  feeEvidence = null,
+  liquidityEvidence = null,
+  selectedSymbol = 'ETH',
+  now = Date.now(),
+} = {}) {
   const product = getProduct(productId);
   const [health, reserves, bridge, vault, kycRes, historyRes] = await Promise.all([
     client.health(),
@@ -81,6 +95,28 @@ export async function loadProductScreen(productId, client, { previousAccount = n
   });
   const historyItems = visibleHistory(historyPage.items);
   const wallet = bindWallet(session, { address: session?.address });
+  const fees = presentFeeAndGas(feeEvidence);
+  const slippage = presentSlippage(slippageBps, { feeBps: fees.feeBps });
+  const trading = buildTradingPanel({
+    selectedSymbol,
+    selectedChainId: productId === 'nova-x' ? 1 : product.chainId,
+    kyc,
+    quoteEvidence,
+    feeEvidence,
+    liquidityEvidence,
+    slippageBps,
+    historyItems: Array.isArray(rawHistory) ? rawHistory : [],
+    accountId: session?.accountId ?? null,
+    now,
+  });
+  const superBridge = {
+    matrix: superBridgeRouteMatrix(),
+    availableCount: superBridgeRouteMatrix().filter((row) => row.available).length,
+    transferBlocked: true,
+    interpretation: interpretSuperBridgeTransfer(null, { clientState: 'blocked' }),
+    autoRetry: shouldAutoRetrySuperBridge(interpretSuperBridgeTransfer(null, { clientState: 'timeout' })),
+  };
+  const reservesDisplay = displayAccountReserves(account);
 
   return {
     product,
@@ -88,6 +124,7 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     error: failed?.error || null,
     kyc,
     account,
+    reservesDisplay,
     settlement: settlementLabel(bridge.data),
     bridgeReady: bridge.data?.ready === true && bridge.data?.success === true,
     vaultStatus: vault.ok ? vault.data.status : 'UNAVAILABLE',
@@ -97,12 +134,16 @@ export async function loadProductScreen(productId, client, { previousAccount = n
     rapidSupported: rapidTokens().length,
     history: historyItems,
     slippageBps,
-    feeLabel: 'Fee unavailable',
+    slippage,
+    feeLabel: fees.feeLabel,
+    gasLabel: fees.gasLabel,
     fiat,
     swapError,
     portfolio: portfolioTotal(tokens.map((token) => token.value)),
     chain,
     quote: quotePreview(quoteEvidence, now),
+    trading,
+    superBridge,
     reservation: reservationView(reservationEvidence, now),
     historyPage,
     wallet,
@@ -144,9 +185,12 @@ export function renderProduct(screen) {
     ${screen.swapError ? `<p data-swap-error="${escapeHtml(screen.swapError.code)}">${escapeHtml(screen.swapError.message)}</p>` : ''}
     <p data-settlement="${screen.settlement}">Settlement ${escapeHtml(screen.settlement)}</p>
     <p data-request="${screen.confirmation.request}" data-completed="${screen.confirmation.completed}">Request ${escapeHtml(screen.confirmation.request)}. Settlement ${escapeHtml(screen.confirmation.settlement)}.</p>
-    <p data-fee>${escapeHtml(screen.feeLabel)}. Slippage ${screen.slippageBps} bps (not applied while the fee is unknown).</p>
+    <p data-fee>${escapeHtml(screen.feeLabel)}. ${escapeHtml(screen.gasLabel || 'Gas unavailable')}. ${escapeHtml(screen.slippage?.label || `Slippage ${screen.slippageBps} bps`)}.</p>
     <p role="status" data-service="${escapeHtml(screen.phase)}">${serviceCopy(screen.phase)}</p>
     <p data-quote="${escapeHtml(screen.quote.state)}">Quote ${escapeHtml(screen.quote.state)}. Trading is not submitted from this page.</p>
+    <p data-trading-route="${escapeHtml(screen.trading?.route?.state || 'unsupported')}">Trade route ${escapeHtml(screen.trading?.route?.label || 'unavailable')}. Can trade: ${screen.trading?.canTrade === true ? 'yes' : 'no'}.</p>
+    <p data-super-bridge-available="${screen.superBridge?.availableCount ?? 0}">Super Bridge live routes: ${screen.superBridge?.availableCount ?? 0}. Transfer blocked: ${screen.superBridge?.transferBlocked === true ? 'yes' : 'no'}. Auto-retry: ${screen.superBridge?.autoRetry === true ? 'yes' : 'no'}.</p>
+    <p data-reserves="${escapeHtml(screen.reservesDisplay?.label || 'unavailable')}">Reserves ${escapeHtml(screen.reservesDisplay?.label || 'unavailable')}.</p>
     <p data-reservation="${escapeHtml(screen.reservation.state)}">Reservation ${escapeHtml(screen.reservation.state)}.</p>
     <button type="button" data-retry="read" style="min-height:44px;min-width:44px" ${retryable ? '' : 'disabled'}>Retry read</button>
     ${screen.error ? `<p role="alert" data-error="${escapeHtml(screen.error)}">Request ${escapeHtml(screen.phase)}. Retry reads the API again and does not send a transfer.</p>` : ''}

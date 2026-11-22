@@ -1,19 +1,50 @@
 /** Disable a route unless KYC, funding, fees, and backend support all agree. */
 
 import { gateAction } from './kyc.mjs';
+import { evaluateSuperBridgeRoute, availableSuperBridgeRoutes } from './super-bridge.mjs';
+import { requireExactTokenIdentity } from './trading-tokens.mjs';
 
 const ACTIONS = ['deposit', 'withdraw', 'transfer', 'swap', 'trade', 'bridge', 'liquidity'];
 
-export function evaluateRoute({ action, token, kyc, pool, bridge, feeBps, slippageBps, liquidityEnabled = false }) {
+export function evaluateRoute({
+  action,
+  token,
+  kyc,
+  pool,
+  bridge,
+  feeBps,
+  slippageBps,
+  liquidityEnabled = false,
+  sourceChainId = null,
+  destChainId = null,
+}) {
   if (!ACTIONS.includes(action)) return disabled(action, 'unsupported');
   const gate = gateAction(action, kyc);
   if (!gate.allowed) return disabled(action, gate.reason);
   if (!token?.supported) return disabled(action, 'unsupported');
   if (token.kind === 'custom' || token.kind === 'rapid') return disabled(action, 'unsupported');
+  if (token.symbol === 'HHE3' || token.unsupportedReason === 'missing_contract_address') {
+    return disabled(action, 'unsupported');
+  }
+  if (token.productId === 'nova-x' || token.tradingSurface === true) {
+    const identity = requireExactTokenIdentity(token);
+    if (!identity.ok) return disabled(action, identity.reason);
+  }
 
   if (action === 'bridge') {
     const routes = Array.isArray(bridge?.routes) ? bridge.routes : [];
-    if (routes.length === 0 || bridge?.alltraCrossChainBridgeConfigured !== true) {
+    const legacyBridgeOpen = routes.length > 0 && bridge?.alltraCrossChainBridgeConfigured === true;
+    const liveSuper = availableSuperBridgeRoutes();
+    if (sourceChainId != null && destChainId != null) {
+      const inspected = evaluateSuperBridgeRoute({ sourceChainId, destChainId });
+      if (inspected.state !== 'quote_available') {
+        return disabled(action, inspected.state === 'route_unavailable' ? 'unavailable' : 'unsupported');
+      }
+    }
+    if (!legacyBridgeOpen && liveSuper.length === 0) {
+      return disabled(action, 'unsupported');
+    }
+    if (!legacyBridgeOpen) {
       return disabled(action, 'unsupported');
     }
   }

@@ -6,4 +6,11 @@ Capability levels for deposit, withdraw, transfer, swap, trade, bridge, and liqu
 
 Customer Bank routes observed in source stay inactive. Fiat transaction POSTs, KYC/KYB start, and `POST /webhooks/compliance/sumsub` are prohibited. See `ROUTE-MATRIX.md`.
 
-Quote preview accepts only a payload with `authoritative: true`. Missing, rejected, expired, and pending payloads are not executable. No quote endpoint is called.
+Quote preview accepts only a payload with `authoritative: true`. Missing, rejected, expired, and pending payloads are not executable. Invented liquidity is rejected. No quote endpoint is called.
+
+## Super Bridge
+
+- Status read: `GET /api/v1/chains/super-bridge`
+- Transfer: `POST /api/v1/chains/super-bridge/transfer` with body `{ fromAccountId, amount, currency, targetChain, recipientAddress?, pin }`
+- The browser client blocks the transfer POST. Timeouts and unauthoritative confirmations map to `requires_reconciliation` and must not auto-retry.
+- Historical EVM routes in `super-bridge.mjs` remain unavailable until backend evidence shows deployed contracts and a running relayer.

@@ -12,6 +12,8 @@ export const FINANCIAL_POSTS = [
   '/trading/swap',
   '/api/v1/swap/build-tx',
   '/api/v1/amm/quote',
+  '/api/v1/chains/super-bridge/transfer',
+  '/chains/super-bridge/transfer',
 ];
 
 const READS = {
@@ -24,6 +26,7 @@ const READS = {
   kyc: '/api/v1/kyc/sumsub/status',
   history: '/api/v1/activity',
   fiatRails: '/api/v1/nova-x/fiat-rails',
+  superBridge: '/api/v1/chains/super-bridge',
 };
 
 export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeoutMs = 8000, session = null } = {}) {
@@ -108,6 +111,12 @@ export function createClient({ fetchImpl = globalThis.fetch, baseUrl = '', timeo
     kyc: () => request(READS.kyc),
     history: () => request(READS.history),
     fiatRails: () => request(READS.fiatRails),
+    superBridge: () => request(READS.superBridge),
+    /** Transfer remains blocked; ambiguous outcomes must not be retried. */
+    superBridgeTransfer: () => request(READS.superBridge.replace(/\/$/, '') + '/transfer', {
+      method: 'POST',
+      body: {},
+    }),
     customerKycMe: () => customerRead(),
     customerHistory: () => customerRead(),
     rpc: (productGateway, body) => request(productGateway, { method: 'POST', body, idempotencyKey: `rpc:${body?.id}:${body?.method}` }),
